@@ -12,6 +12,7 @@
 - Users can optionally upload **logs** and **tags** CSVs to enrich data:
 	- `logs` adds rating **dates** via `action_type = rating` + `log_json.movieId`.
 	- `tags` adds user tags for Letterboxd export.
+- Staged editing should follow the shared minimal-edit contract: expose identifier fields (`LetterboxdURI`/`tmdbID`/`imdbID`/`Title`) and editable diary metadata fields (`Rating`/`Rating10`, `WatchedDate`, `Rewatch`, `Tags`, `Review`) as the default user-editable surface.
 
 ### Primary use case (current priority)
 We mainly care about `logs` rows where `action_type` is `rating`, to find a
@@ -186,6 +187,8 @@ Notes:
 - Add schema for `tag` action (optional): e.g. `{ movieId: "number", tag: "string" }`.
 - Add structured models for ratings/tags/wishlist CSVs.
 - Align on where errors are stored (per-row or external list) once UI shape is clearer.
+- For MovieLens imports, do not maintain a separate `Year` field in staged UI/export mapping when the title already includes year text (e.g., `Film Name (1999)`).
+- If release-year metadata is missing in a future flow, prefer resolving it from `imdbID`/`tmdbID` lookups rather than asking for redundant manual year entry.
 - **Wishlist**: defer to a separate lists-management route (may optionally reuse data from import page).
 - Batch import helper can be revisited later (avoid loading multiple large blobs at once for now).
 
