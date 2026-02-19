@@ -188,94 +188,111 @@ type UploadPanelProps = {
 	onTagsUpload: (event: Event) => void | Promise<void>
 }
 
-const UploadPanel: Component<UploadPanelProps> = (props) => (
-	<section class="my-3">
-		<h2 class="text-2xl font-bold mb-4">Uploads</h2>
-		<div class="grid gap-3 mb-4">
-			<div>
-				<p class="font-semibold mb-1">
-					Ratings CSV (required)
-				</p>
-				<label for="ratings-file" class="">
-					<p class="border w-max px-1">Choose a File</p>
-					<input
-						class="w-0 h-0 opacity-0 absolute"
-						id="ratings-file"
-						type="file"
-						accept=".csv,text/csv"
-						onChange={props.onRatingsUpload}
-					/>
-				</label>
-				<p class="text-sm">{props.renderUploadMeta(props.ratingsUpload())}</p>
-			</div>
+const UploadPanel: Component<UploadPanelProps> = (props) => {
+	const displayText = {
+		title: "Uploads",
+		ratingsLabel: "Ratings CSV (required)",
+		logsLabel: "Logs CSV (optional)",
+		tagsLabel: "Tags CSV (optional)",
+		chooseFile: "Choose a File"
+	} as const
+	const formatUploadSummaryText = (rows: number, issues: number) => `Summary: ${rows} staged rows • ${issues} issues`
+	return (
+		<section class="my-3">
+			<h2 class="text-2xl font-bold mb-4">{displayText.title}</h2>
+			<div class="grid gap-3 mb-4">
+				<div>
+					<p class="font-semibold mb-1">
+						{displayText.ratingsLabel}
+					</p>
+					<label for="ratings-file" class="">
+						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<input
+							class="w-0 h-0 opacity-0 absolute"
+							id="ratings-file"
+							type="file"
+							accept=".csv,text/csv"
+							onChange={props.onRatingsUpload}
+						/>
+					</label>
+					<p class="text-sm">{props.renderUploadMeta(props.ratingsUpload())}</p>
+				</div>
 
-			<div>
-				<p class="font-semibold mb-1">
-					Logs CSV (optional)
-				</p>
-				<label for="logs-file" class="">
-					<p class="border w-max px-1">Choose a File</p>
-					<input
-						class="w-0 h-0 opacity-0 absolute"
-						id="logs-file"
-						type="file"
-						accept=".csv,text/csv"
-						disabled={!props.canUploadOptional()}
-						onChange={props.onLogsUpload}
-					/>
-				</label>
-				<p class="text-sm">{props.renderUploadMeta(props.logsUpload())}</p>
-			</div>
+				<div>
+					<p class="font-semibold mb-1">
+						{displayText.logsLabel}
+					</p>
+					<label for="logs-file" class="">
+						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<input
+							class="w-0 h-0 opacity-0 absolute"
+							id="logs-file"
+							type="file"
+							accept=".csv,text/csv"
+							disabled={!props.canUploadOptional()}
+							onChange={props.onLogsUpload}
+						/>
+					</label>
+					<p class="text-sm">{props.renderUploadMeta(props.logsUpload())}</p>
+				</div>
 
-			<div>
-				<p class="font-semibold mb-1">
-					Tags CSV (optional)
-				</p>
-				<label for="tags-file" class="">
-					<p class="border w-max px-1">Choose a File</p>
-					<input
-						class="w-0 h-0 opacity-0 absolute"
-						id="tags-file"
-						type="file"
-						accept=".csv,text/csv"
-						disabled={!props.canUploadOptional()}
-						onChange={props.onTagsUpload}
-					/>
-				</label>
-				<p class="text-sm">{props.renderUploadMeta(props.tagsUpload())}</p>
+				<div>
+					<p class="font-semibold mb-1">
+						{displayText.tagsLabel}
+					</p>
+					<label for="tags-file" class="">
+						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<input
+							class="w-0 h-0 opacity-0 absolute"
+							id="tags-file"
+							type="file"
+							accept=".csv,text/csv"
+							disabled={!props.canUploadOptional()}
+							onChange={props.onTagsUpload}
+						/>
+					</label>
+					<p class="text-sm">{props.renderUploadMeta(props.tagsUpload())}</p>
+				</div>
 			</div>
-		</div>
-		<p class="text-sm">
-			Summary: {props.stagedRows().length} staged rows • {props.allIssues().length} issues
-		</p>
-	</section>
-)
+			<p class="text-sm">
+				{formatUploadSummaryText(props.stagedRows().length, props.allIssues().length)}
+			</p>
+		</section>
+	)
+}
 
 type IssuesPanelProps = {
 	allIssues: Accessor<UiIssue[]>
 }
-
-const IssuesPanel: Component<IssuesPanelProps> = (props) => (
-	<section class="my-6">
-		<h2 class="text-2xl font-bold mb-4">Issues</h2>
-		<Show
-			when={props.allIssues().length > 0}
-			fallback={<p>No issues.</p>}
-		>
-			<ul class="list-disc list-inside space-y-1">
-				<For each={props.allIssues()}>
-					{(issue) => (
-						<li class="text-sm">
-							<strong>{issue.severity.toUpperCase()}</strong> [{issue.source}]
-							{issue.rowIndex !== undefined ? ` row ${issue.rowIndex}` : ""}
-							{issue.field ? ` (${issue.field})` : ""}: {issue.message}
-						</li>
-					)}
-				</For>
-			</ul>
-		</Show>
-	</section>
-)
+const IssuesPanel: Component<IssuesPanelProps> = (props) => {
+	const displayText = {
+		title: "Issues",
+		onEmpty: "No issues."
+	} as const
+	const formatIssueRowLabel = (rowIndex: number) => ` row ${rowIndex}`
+	const formatIssueFieldLabel = (field: string) => ` (${field})`
+	return (
+		<section class="my-6">
+			<h2 class="text-2xl font-bold mb-4">{displayText.title}</h2>
+			<Show
+				when={props.allIssues().length > 0}
+				fallback={<p>{displayText.onEmpty}</p>}
+			>
+				<ul class="list-disc list-inside space-y-1">
+					<For each={props.allIssues()}>
+						{(issue) => (
+							<li class="text-sm">
+								<strong>{issue.severity.toUpperCase()}</strong> [{issue.source}]
+								{issue.rowIndex !== undefined ? formatIssueRowLabel(issue.rowIndex) : ""}
+								{issue.field ? formatIssueFieldLabel(issue.field) : ""}: {issue.message}
+							</li>
+						)}
+					</For>
+				</ul>
+			</Show>
+		</section>
+	)
+}
 
 type TableActionsProps = {
 	canDownload: Accessor<boolean>
@@ -283,18 +300,23 @@ type TableActionsProps = {
 	onDownload: () => void | Promise<void>
 	onClear: () => void
 }
-
-const TableActions: Component<TableActionsProps> = (props) => (
-	<div class="flex gap-2 items-center flex-wrap mb-1">
-		<button class="border px-1" type="button" onClick={props.onDownload} disabled={!props.canDownload()}>
-			Download Letterboxd CSV
-		</button>
-		<button class="border px-1" type="button" onClick={props.onClear}>Clear import</button>
-		<Show when={props.restoreMessage().length > 0}>
-			<span>{props.restoreMessage()}</span>
-		</Show>
-	</div>
-)
+const TableActions: Component<TableActionsProps> = (props) => {
+	const displayText = {
+		downloadButton: "Download Letterboxd CSV",
+		clearButton: "Clear import"
+	} as const
+	return (
+		<div class="flex gap-2 items-center flex-wrap mb-1">
+			<button class="border px-1" type="button" onClick={props.onDownload} disabled={!props.canDownload()}>
+				{displayText.downloadButton}
+			</button>
+			<button class="border px-1" type="button" onClick={props.onClear}>{displayText.clearButton}</button>
+			<Show when={props.restoreMessage().length > 0}>
+				<span>{props.restoreMessage()}</span>
+			</Show>
+		</div>
+	)
+}
 
 type StagedTableProps = {
 	stagedRows: Accessor<StagedRow[]>
@@ -310,120 +332,144 @@ type StagedTableProps = {
 	onDownload: () => void | Promise<void>
 	onClear: () => void
 }
-
-const StagedTable: Component<StagedTableProps> = (props) => (
-	<section class="my-6">
-		<h2 class="text-2xl font-bold mb-1">Staged Letterboxd import data</h2>
-		<TableActions
-			canDownload={props.canDownload}
-			restoreMessage={props.restoreMessage}
-			onDownload={props.onDownload}
-			onClear={props.onClear}
-		/>
+const StagedTable: Component<StagedTableProps> = (props) => {
+	const displayText = {
+		title: "Staged Letterboxd import data",
+		rowStatusOk: "ok",
+		headerLabels: ["Status", "Title", "IMDb Title ID", "Rating", "WatchedDate", "Rewatch", "Tags", "Review"],
+		inputPlaceholders: {
+			imdbID: "0050083",
+			rating: "0.5-5",
+			watchedDate: "YYYY-MM-DD",
+			tags: "comma, separated"
+		}
+	} as const
+	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
+	const PressEnterHint = () => (
 		<p class="text-sm mb-2 text-gray-600">
 			<strong>Note:</strong> Must press{" "}
 			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Enter</kbd>{" "}
 			to save any changes.
 		</p>
-		<div class="overflow-auto border border-gray-300">
-			<table class="w-full">
-				<thead class="bg-gray-100">
-					<tr>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Status</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Title</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">IMDb Title ID</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Rating</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">WatchedDate</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Rewatch</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Tags</th>
-						<th class="px-3 py-2 text-left text-sm font-semibold">Review</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-200">
-					<Index each={props.stagedRows()}>
-						{(row, index) => (
-							<tr class="hover:bg-gray-50">
-								<td class="px-3 py-2 text-sm">
-									{(props.issueCountsByRowIndex().get(index + 1) ?? 0) > 0
-										? `${props.issueCountsByRowIndex().get(index + 1)} issue(s)`
-										: "ok"}
-								</td>
-								<td class="px-3 py-2 text-sm">
-									{row().Title}
-								</td>
-								<td class="px-3 py-2">
-									<input
-										class="w-28 px-2 py-1 text-sm border border-gray-300 rounded font-mono"
-										value={props.getInputValue(row(), "imdbID")}
-										onInput={(event) => props.setDraftValue(row().id, "imdbID", event.currentTarget.value)}
-										onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "imdbID")}
-										onBlur={() => props.handleDraftBlur(row().id, "imdbID")}
-										placeholder="0050083"
-									/>
-								</td>
-								<td class="px-3 py-2">
-									<input
-										class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
-										value={props.getInputValue(row(), "Rating")}
-										onInput={(event) => props.setDraftValue(row().id, "Rating", event.currentTarget.value)}
-										onChange={() => props.handleRatingChange(row())}
-										placeholder="0.5-5"
-										step={0.5}
-										min={0.5}
-										max={5}
-										type="number"
-									/>
-								</td>
-								<td class="px-3 py-2">
-									<input
-										class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
-										value={props.getInputValue(row(), "WatchedDate")}
-										onInput={(event) => props.setDraftValue(row().id, "WatchedDate", event.currentTarget.value)}
-										onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "WatchedDate")}
-										onBlur={() => props.handleDraftBlur(row().id, "WatchedDate")}
-										placeholder="YYYY-MM-DD"
-										type="date"
-									/>
-								</td>
-								<td class="text-center">
-									<input
-										class="self-center border"
-										type="checkbox"
-										checked={row().Rewatch}
-										onChange={(event) => props.onToggleRewatch(row().id, event.currentTarget.checked)}
-									/>
-								</td>
-								<td class="px-3 py-2">
-									<input
-										class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-										title={props.getInputValue(row(), "Tags")}
-										value={props.getInputValue(row(), "Tags")}
-										onInput={(event) => props.setDraftValue(row().id, "Tags", event.currentTarget.value)}
-										onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Tags")}
-										onBlur={() => props.handleDraftBlur(row().id, "Tags")}
-										placeholder="comma, separated"
-									/>
-								</td>
-								<td class="px-3 py-2">
-									<input
-										class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-										value={props.getInputValue(row(), "Review")}
-										title={props.getInputValue(row(), "Review")}
-										onInput={(event) => props.setDraftValue(row().id, "Review", event.currentTarget.value)}
-										onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Review")}
-										onBlur={() => props.handleDraftBlur(row().id, "Review")}
-									/>
-								</td>
-							</tr>
-						)}
-					</Index>
-				</tbody>
-			</table>
-		</div>
-	</section>
-)
+	)
+	return (
+		<section class="my-6">
+			<h2 class="text-2xl font-bold mb-1">{displayText.title}</h2>
+			<TableActions
+				canDownload={props.canDownload}
+				restoreMessage={props.restoreMessage}
+				onDownload={props.onDownload}
+				onClear={props.onClear}
+			/>
+			<PressEnterHint />
+			<div class="overflow-auto border border-gray-300">
+				<table class="w-full">
+					<thead class="bg-gray-100">
+						<tr>
+							<For each={displayText.headerLabels}>
+								{(header) => <th class="px-3 py-2 text-left text-sm font-semibold">{header}</th>}
+							</For>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-200">
+						<Index each={props.stagedRows()}>
+							{(row, index) => (
+								<tr class="hover:bg-gray-50">
+									<td class="px-3 py-2 text-sm">
+										{(props.issueCountsByRowIndex().get(index + 1) ?? 0) > 0
+											? getIssueStatusMessage(props.issueCountsByRowIndex().get(index + 1) ?? 0)
+											: displayText.rowStatusOk}
+									</td>
+									<td class="px-3 py-2 text-sm">
+										{row().Title}
+									</td>
+									<td class="px-3 py-2">
+										<input
+											class="w-28 px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+											value={props.getInputValue(row(), "imdbID")}
+											onInput={(event) => props.setDraftValue(row().id, "imdbID", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "imdbID")}
+											onBlur={() => props.handleDraftBlur(row().id, "imdbID")}
+											placeholder={displayText.inputPlaceholders.imdbID}
+										/>
+									</td>
+									<td class="px-3 py-2">
+										<input
+											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
+											value={props.getInputValue(row(), "Rating")}
+											onInput={(event) => props.setDraftValue(row().id, "Rating", event.currentTarget.value)}
+											onChange={() => props.handleRatingChange(row())}
+											placeholder={displayText.inputPlaceholders.rating}
+											step={0.5}
+											min={0.5}
+											max={5}
+											type="number"
+										/>
+									</td>
+									<td class="px-3 py-2">
+										<input
+											class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
+											value={props.getInputValue(row(), "WatchedDate")}
+											onInput={(event) => props.setDraftValue(row().id, "WatchedDate", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "WatchedDate")}
+											onBlur={() => props.handleDraftBlur(row().id, "WatchedDate")}
+											placeholder={displayText.inputPlaceholders.watchedDate}
+											type="date"
+										/>
+									</td>
+									<td class="text-center">
+										<input
+											class="self-center border"
+											type="checkbox"
+											checked={row().Rewatch}
+											onChange={(event) => props.onToggleRewatch(row().id, event.currentTarget.checked)}
+										/>
+									</td>
+									<td class="px-3 py-2">
+										<input
+											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+											title={props.getInputValue(row(), "Tags")}
+											value={props.getInputValue(row(), "Tags")}
+											onInput={(event) => props.setDraftValue(row().id, "Tags", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Tags")}
+											onBlur={() => props.handleDraftBlur(row().id, "Tags")}
+											placeholder={displayText.inputPlaceholders.tags}
+										/>
+									</td>
+									<td class="px-3 py-2">
+										<input
+											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+											value={props.getInputValue(row(), "Review")}
+											title={props.getInputValue(row(), "Review")}
+											onInput={(event) => props.setDraftValue(row().id, "Review", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Review")}
+											onBlur={() => props.handleDraftBlur(row().id, "Review")}
+										/>
+									</td>
+								</tr>
+							)}
+						</Index>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	)
+}
 
 const App: Component = () => {
+	const displayText = {
+		pageTitle: "Bridge: MovieLens to Letterboxd",
+		instructionsLabel: "Instructions",
+		instructionsSteps: [
+			"Upload Movielens ratings CSV (required)",
+			"Upload Movielens logs and/or tags CSV (optional)",
+			"Review/edit uploaded Movielens data",
+			"Export to Letterboxd ratings import CSV"
+		],
+		confirmOverwrite: "Importing a new ratings file will overwrite current staged data. Continue?"
+	} as const
+	const formatUploadMetaLoaded = (fileName: string, rows: number) => `${fileName}: loaded ${rows} rows`
+
 	const [ratingsUpload, setRatingsUpload] = createSignal<UploadState>(emptyUploadState())
 	const [logsUpload, setLogsUpload] = createSignal<UploadState>(emptyUploadState())
 	const [tagsUpload, setTagsUpload] = createSignal<UploadState>(emptyUploadState())
@@ -583,7 +629,7 @@ const App: Component = () => {
 		}
 
 		if (stagedRows().length > 0) {
-			const confirmed = window.confirm("Importing a new ratings file will overwrite current staged data. Continue?")
+			const confirmed = window.confirm(displayText.confirmOverwrite)
 			if (!confirmed) {
 				input.value = ""
 				return
@@ -619,7 +665,7 @@ const App: Component = () => {
 				status: "loaded",
 				fileName: file.name,
 				rows: parsed.rows.length,
-				message: `Loaded ${parsed.rows.length} rows`
+				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
 			})
 			setRestoreMessage("")
 		} catch (error) {
@@ -685,7 +731,7 @@ const App: Component = () => {
 				status: "loaded",
 				fileName: file.name,
 				rows: parsed.rows.length,
-				message: `Loaded ${parsed.rows.length} rows`
+				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
 			})
 		} catch (error) {
 			setLogsUpload({ status: "error", fileName: file.name, message: parseErrorToMessage(error) })
@@ -741,7 +787,7 @@ const App: Component = () => {
 				status: "loaded",
 				fileName: file.name,
 				rows: parsed.rows.length,
-				message: `Loaded ${parsed.rows.length} rows`
+				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
 			})
 		} catch (error) {
 			setTagsUpload({ status: "error", fileName: file.name, message: parseErrorToMessage(error) })
@@ -787,29 +833,35 @@ const App: Component = () => {
 	}
 
 	const renderUploadMeta = (state: UploadState) => {
+		const formatUploadMetaError = (fileName: string, message: string) => `${fileName}: ${message}`
+		const formatUploadMetaParsing = (fileName: string) => `Parsing ${fileName}...`
+		const fallbackFileText = "no file"
 		if (state.status === "idle") {
 			return "Not uploaded"
 		}
 		if (state.status === "parsing") {
-			return `Parsing ${state.fileName ?? "file"}...`
+			return formatUploadMetaParsing(state.fileName ?? fallbackFileText)
 		}
 		if (state.status === "loaded") {
-			return `${state.fileName ?? "file"}: loaded ${state.rows ?? 0} rows`
+			return formatUploadMetaLoaded(
+				state.fileName ?? fallbackFileText,
+				state.rows ?? 0
+			)
 		}
-		return `${state.fileName ?? "file"}: ${state.message ?? "Failed"}`
+		return formatUploadMetaError(
+			state.fileName ?? fallbackFileText,
+			state.message ?? `Failed`
+		)
 	}
 
 	return (
 		<main class="mx-auto p-4 max-w-6xl">
 			<header class="mb-3">
-				<h1 class="text-3xl font-bold mb-2">Bridge: MovieLens to Letterboxd</h1>
+				<h1 class="text-3xl font-bold mb-2">{displayText.pageTitle}</h1>
 				<div class="text-sm">
-					<p class="font-semibold mb-2">Instructions</p>
+					<p class="font-semibold mb-2">{displayText.instructionsLabel}</p>
 					<ol class="flex flex-col gap-1 ml-4 list-decimal">
-						<li>Upload Movielens ratings CSV (required)</li>
-						<li>Upload Movielens logs and/or tags CSV (optional)</li>
-						<li>Review/edit uploaded Movielens data</li>
-						<li>Export to Letterboxd ratings import CSV</li>
+						<For each={displayText.instructionsSteps}>{(step) => <li>{step}</li>}</For>
 					</ol>
 				</div>
 			</header>
