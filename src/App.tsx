@@ -1,6 +1,5 @@
 import { Micro } from "effect"
 import { type Component, createEffect, createMemo, createSignal, For, Index, onMount, Show } from "solid-js"
-
 import { type LetterboxdImportRow, toCsvBlobEffect } from "./modules/letterboxd"
 import {
 	parseMovielensLogsCsv,
@@ -544,66 +543,72 @@ const App: Component = () => {
 
 	return (
 		<main class="mx-auto p-4 max-w-6xl">
-			<header class="mb-6">
-				<h1 class="text-3xl font-bold mb-2">MovieLens Import</h1>
-				<p class="mb-4">
-					Upload ratings (required), then logs/tags (optional), review staged rows, and export Letterboxd CSV.
-				</p>
-				<div class="flex gap-2 items-center flex-wrap">
-					<button class="border" type="button" onClick={handleDownload} disabled={!canDownload()}>
-						Download Letterboxd CSV
-					</button>
-					<button class="border" type="button" onClick={clearSession}>Clear import</button>
-					<Show when={restoreMessage().length > 0}>
-						<span>{restoreMessage()}</span>
-					</Show>
+			<header class="mb-3">
+				<h1 class="text-3xl font-bold mb-2">Bridge: MovieLens to Letterboxd</h1>
+				<div class="text-sm">
+					<p class="font-semibold mb-2">Instructions</p>
+					<ol class="flex flex-col gap-1 ml-4 list-decimal">
+						<li>Upload Movielens ratings CSV (required)</li>
+						<li>Upload Movielens logs and/or tags CSV (optional)</li>
+						<li>Review/edit uploaded Movielens data</li>
+						<li>Export to Letterboxd ratings import CSV</li>
+					</ol>
 				</div>
 			</header>
 
-			<section class="my-6">
+			<section class="my-3">
 				<h2 class="text-2xl font-bold mb-4">Uploads</h2>
 				<div class="grid gap-3 mb-4">
 					<div>
-						<label for="ratings-file" class="block font-semibold mb-1">Ratings CSV (required)</label>
-						<div class="mb-2">
+						<p class="font-semibold mb-1">
+							Ratings CSV (required)
+						</p>
+						<label for="ratings-file" class="">
+							<p class="border w-max px-1">Choose a File</p>
 							<input
-								class="border"
+								class="w-0 h-0 opacity-0 absolute"
 								id="ratings-file"
 								type="file"
 								accept=".csv,text/csv"
 								onChange={handleRatingsUpload}
 							/>
-						</div>
+						</label>
 						<p class="text-sm">{renderUploadMeta(ratingsUpload())}</p>
 					</div>
 
 					<div>
-						<label for="logs-file" class="block font-semibold mb-1">Logs CSV (optional)</label>
-						<div class="mb-2">
+						<p class="font-semibold mb-1">
+							Logs CSV (optional)
+						</p>
+						<label for="logs-file" class="">
+							<p class="border w-max px-1">Choose a File</p>
 							<input
-								class="border"
+								class="w-0 h-0 opacity-0 absolute"
 								id="logs-file"
 								type="file"
 								accept=".csv,text/csv"
 								disabled={!canUploadOptional()}
 								onChange={handleLogsUpload}
 							/>
-						</div>
+						</label>
 						<p class="text-sm">{renderUploadMeta(logsUpload())}</p>
 					</div>
 
 					<div>
-						<label for="tags-file" class="block font-semibold mb-1">Tags CSV (optional)</label>
-						<div class="mb-2">
+						<p class="font-semibold mb-1">
+							Tags CSV (optional)
+						</p>
+						<label for="tags-file" class="">
+							<p class="border w-max px-1">Choose a File</p>
 							<input
-								class="border"
+								class="w-0 h-0 opacity-0 absolute"
 								id="tags-file"
 								type="file"
 								accept=".csv,text/csv"
 								disabled={!canUploadOptional()}
 								onChange={handleTagsUpload}
 							/>
-						</div>
+						</label>
 						<p class="text-sm">{renderUploadMeta(tagsUpload())}</p>
 					</div>
 				</div>
@@ -633,7 +638,16 @@ const App: Component = () => {
 			</section>
 
 			<section class="my-6">
-				<h2 class="text-2xl font-bold mb-4">Staged for Letterboxd export</h2>
+				<h2 class="text-2xl font-bold mb-1">Staged Letterboxd import data</h2>
+				<div class="flex gap-2 items-center flex-wrap mb-1">
+					<button class="border px-1" type="button" onClick={handleDownload} disabled={!canDownload()}>
+						Download Letterboxd CSV
+					</button>
+					<button class="border px-1" type="button" onClick={clearSession}>Clear import</button>
+					<Show when={restoreMessage().length > 0}>
+						<span>{restoreMessage()}</span>
+					</Show>
+				</div>
 				<p class="text-sm mb-2 text-gray-600">
 					<strong>Note:</strong> Must press{" "}
 					<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Enter</kbd>{" "}
@@ -699,8 +713,9 @@ const App: Component = () => {
 												type="date"
 											/>
 										</td>
-										<td class="px-3 py-2 text-sm">
+										<td class="text-center">
 											<input
+												class="self-center border"
 												type="checkbox"
 												checked={row().Rewatch}
 												onChange={(event) => updateRowField(row().id, "Rewatch", event.currentTarget.checked)}
