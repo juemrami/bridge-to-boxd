@@ -378,7 +378,13 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 				canDownload={props.canDownload}
 				restoreMessage={props.restoreMessage}
 				onDownload={props.onDownload}
-				onClear={props.onClear}
+				onClear={() => {
+					const confirmed = !props.canDownload() ||
+						window.confirm("Are you sure you want to clear all staged data? This cannot be undone.")
+					if (confirmed) {
+						props.onClear()
+					}
+				}}
 			/>
 			<PressEnterHint />
 			<div class="overflow-auto border border-gray-300">
