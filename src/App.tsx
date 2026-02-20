@@ -18,9 +18,25 @@ import {
 	type ValidationError
 } from "./modules/movielens"
 
-type UploadStatus = "idle" | "parsing" | "loaded" | "error"
-type IssueSeverity = "fatal" | "non-fatal"
-type IssueSource = "ratings" | "logs" | "tags" | "export"
+const UploadStatus = {
+	idle: "idle",
+	parsing: "parsing",
+	loaded: "loaded",
+	error: "error"
+} as const
+type UploadStatus = typeof UploadStatus[keyof typeof UploadStatus]
+const IssueSeverity = {
+	fatal: "fatal",
+	nonFatal: "non-fatal"
+} as const
+type IssueSeverity = typeof IssueSeverity[keyof typeof IssueSeverity]
+const IssueSource = {
+	ratings: "ratings",
+	logs: "logs",
+	tags: "tags",
+	export: "export"
+} as const
+type IssueSource = typeof IssueSource[keyof typeof IssueSource]
 
 type UploadState = {
 	status: UploadStatus
@@ -124,10 +140,13 @@ const runMicroOrThrow = async <A, E>(micro: Micro.Micro<A, E>) => {
 	}
 }
 
-const validationErrorsToIssues = (source: Exclude<IssueSource, "export">, errors: ValidationError[]): UiIssue[] =>
+const validationErrorsToIssues = (
+	source: Exclude<IssueSource, typeof IssueSource.export>,
+	errors: ValidationError[]
+): UiIssue[] =>
 	errors.map((error, index) => ({
 		id: `${source}-${error.rowIndex}-${error.field ?? "row"}-${error.code}-${index}`,
-		severity: "non-fatal" as const,
+		severity: IssueSeverity.nonFatal,
 		source,
 		rowIndex: error.rowIndex,
 		field: error.field ?? undefined,
@@ -144,8 +163,8 @@ const buildExportIssues = (rows: StagedRow[]): UiIssue[] => {
 		if (!hasIdentifier) {
 			issues.push({
 				id: `export-${row.id}-identifier`,
-				severity: "non-fatal",
-				source: "export",
+				severity: IssueSeverity.nonFatal,
+				source: IssueSource.export,
 				rowIndex: index + 1,
 				field: "identifier",
 				message: "Row is missing required identifier (LetterboxdURI, tmdbID, imdbID, or Title)."
@@ -479,13 +498,13 @@ const App: Component = () => {
 	const [sessionRestored, setSessionRestored] = createSignal(false)
 	const [restoreMessage, setRestoreMessage] = createSignal("")
 
-	const canUploadOptional = createMemo(() => ratingsUpload().status === "loaded")
+	const canUploadOptional = createMemo(() => ratingsUpload().status === UploadStatus.loaded)
 	const exportIssues = createMemo(() => buildExportIssues(stagedRows()))
 	const allIssues = createMemo(() => [...issues(), ...exportIssues()])
 	const issueCountsByRowIndex = createMemo(() => {
 		const counts = new Map<number, number>()
 		for (const issue of allIssues()) {
-			if (issue.source === "ratings" || issue.rowIndex === undefined) {
+			if (issue.source === IssueSource.ratings || issue.rowIndex === undefined) {
 				continue
 			}
 			counts.set(issue.rowIndex, (counts.get(issue.rowIndex) ?? 0) + 1)
@@ -636,7 +655,7 @@ const App: Component = () => {
 			}
 		}
 
-		setRatingsUpload({ status: "parsing", fileName: file.name })
+		setRatingsUpload({ status: UploadStatus.parsing, fileName: file.name })
 		setLogsUpload(emptyUploadState())
 		setTagsUpload(emptyUploadState())
 		setIssues([])
@@ -660,9 +679,9 @@ const App: Component = () => {
 			}))
 			setStagedRows(nextRows)
 			setDraftEdits({})
-			setIssues(validationErrorsToIssues("ratings", parsed.errors))
+			setIssues(validationErrorsToIssues(IssueSource.ratings, parsed.errors))
 			setRatingsUpload({
-				status: "loaded",
+				status: UploadStatus.loaded,
 				fileName: file.name,
 				rows: parsed.rows.length,
 				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
@@ -671,12 +690,12 @@ const App: Component = () => {
 		} catch (error) {
 			setStagedRows([])
 			setDraftEdits({})
-			setRatingsUpload({ status: "error", fileName: file.name, message: parseErrorToMessage(error) })
+			setRatingsUpload({ status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) })
 			setIssues([
 				{
 					id: `ratings-fatal-${Date.now()}`,
-					severity: "fatal",
-					source: "ratings",
+					severity: IssueSeverity.fatal,
+					source: IssueSource.ratings,
 					message: parseErrorToMessage(error)
 				}
 			])
@@ -692,8 +711,8 @@ const App: Component = () => {
 			return
 		}
 
-		setLogsUpload({ status: "parsing", fileName: file.name })
-		setIssues((prev) => prev.filter((issue) => issue.source !== "logs"))
+		setLogsUpload({ status: UploadStatus.parsing, fileName: file.name })
+		setIssues((prev) => prev.filter((issue) => issue.source !== IssueSource.logs))
 
 		try {
 			const parsed = await runMicroOrThrow(parseMovielensLogsCsv(file))
@@ -726,18 +745,23 @@ const App: Component = () => {
 				})
 			)
 
-			setIssues((prev) => [...prev, ...validationErrorsToIssues("logs", parsed.errors)])
+			setIssues((prev) => [...prev, ...validationErrorsToIssues(IssueSource.logs, parsed.errors)])
 			setLogsUpload({
-				status: "loaded",
+				status: UploadStatus.loaded,
 				fileName: file.name,
 				rows: parsed.rows.length,
 				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
 			})
 		} catch (error) {
-			setLogsUpload({ status: "error", fileName: file.name, message: parseErrorToMessage(error) })
+			setLogsUpload({ status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) })
 			setIssues((prev) => [
 				...prev,
-				{ id: `logs-fatal-${Date.now()}`, severity: "fatal", source: "logs", message: parseErrorToMessage(error) }
+				{
+					id: `logs-fatal-${Date.now()}`,
+					severity: IssueSeverity.fatal,
+					source: IssueSource.logs,
+					message: parseErrorToMessage(error)
+				}
 			])
 		}
 
@@ -751,8 +775,8 @@ const App: Component = () => {
 			return
 		}
 
-		setTagsUpload({ status: "parsing", fileName: file.name })
-		setIssues((prev) => prev.filter((issue) => issue.source !== "tags"))
+		setTagsUpload({ status: UploadStatus.parsing, fileName: file.name })
+		setIssues((prev) => prev.filter((issue) => issue.source !== IssueSource.tags))
 
 		try {
 			const parsed = await runMicroOrThrow(parseMovielensTagsCsv(file))
@@ -782,18 +806,23 @@ const App: Component = () => {
 				})
 			)
 
-			setIssues((prev) => [...prev, ...validationErrorsToIssues("tags", parsed.errors)])
+			setIssues((prev) => [...prev, ...validationErrorsToIssues(IssueSource.tags, parsed.errors)])
 			setTagsUpload({
-				status: "loaded",
+				status: UploadStatus.loaded,
 				fileName: file.name,
 				rows: parsed.rows.length,
 				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
 			})
 		} catch (error) {
-			setTagsUpload({ status: "error", fileName: file.name, message: parseErrorToMessage(error) })
+			setTagsUpload({ status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) })
 			setIssues((prev) => [
 				...prev,
-				{ id: `tags-fatal-${Date.now()}`, severity: "fatal", source: "tags", message: parseErrorToMessage(error) }
+				{
+					id: `tags-fatal-${Date.now()}`,
+					severity: IssueSeverity.fatal,
+					source: IssueSource.tags,
+					message: parseErrorToMessage(error)
+				}
 			])
 		}
 
@@ -824,8 +853,8 @@ const App: Component = () => {
 				...prev,
 				{
 					id: `export-fatal-${Date.now()}`,
-					severity: "fatal",
-					source: "export",
+					severity: IssueSeverity.fatal,
+					source: IssueSource.export,
 					message: parseErrorToMessage(error)
 				}
 			])
@@ -836,13 +865,13 @@ const App: Component = () => {
 		const formatUploadMetaError = (fileName: string, message: string) => `${fileName}: ${message}`
 		const formatUploadMetaParsing = (fileName: string) => `Parsing ${fileName}...`
 		const fallbackFileText = "no file"
-		if (state.status === "idle") {
+		if (state.status === UploadStatus.idle) {
 			return "Not uploaded"
 		}
-		if (state.status === "parsing") {
+		if (state.status === UploadStatus.parsing) {
 			return formatUploadMetaParsing(state.fileName ?? fallbackFileText)
 		}
-		if (state.status === "loaded") {
+		if (state.status === UploadStatus.loaded) {
 			return formatUploadMetaLoaded(
 				state.fileName ?? fallbackFileText,
 				state.rows ?? 0
