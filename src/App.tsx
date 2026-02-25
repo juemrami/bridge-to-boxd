@@ -219,8 +219,9 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 	return (
 		<section class="my-3">
 			<h2 class="text-2xl font-bold mb-4">{displayText.title}</h2>
-			<div class="grid gap-3 mb-4">
-				<div>
+			{/* upload elements */}
+			<div id="upload-panel" class="grid grid-cols-3 gap-3 mb-4">
+				<div id="ratings-upload">
 					<p class="font-semibold mb-1">
 						{displayText.ratingsLabel}
 					</p>
@@ -237,7 +238,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 					<p class="text-sm">{props.renderUploadMeta(props.ratingsUpload())}</p>
 				</div>
 
-				<div>
+				<div id="logs-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
 						{displayText.logsLabel}
 					</p>
@@ -255,7 +256,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 					<p class="text-sm">{props.renderUploadMeta(props.logsUpload())}</p>
 				</div>
 
-				<div>
+				<div id="tags-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
 						{displayText.tagsLabel}
 					</p>
