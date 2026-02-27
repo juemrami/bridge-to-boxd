@@ -1,15 +1,5 @@
 import { Micro } from "effect"
-import {
-	type Accessor,
-	type Component,
-	createEffect,
-	createMemo,
-	createSignal,
-	For,
-	Index,
-	onMount,
-	Show
-} from "solid-js"
+import { type Accessor, type Component, createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js"
 import { type LetterboxdImportRow, toCsvBlobEffect } from "./modules/letterboxd"
 import {
 	parseMovielensLogsCsv,
@@ -340,7 +330,7 @@ const TableActions: Component<TableActionsProps> = (props) => {
 
 type StagedTableProps = {
 	stagedRows: Accessor<StagedRow[]>
-	issueCountsByRowIndex: Accessor<Map<number, number>>
+	getIssueCountForRow: (rowId: string) => number
 	canDownload: Accessor<boolean>
 	restoreMessage: Accessor<string>
 	getInputValue: (row: StagedRow, field: EditableTextField) => string
@@ -353,6 +343,14 @@ type StagedTableProps = {
 	onClear: () => void
 }
 const StagedTable: Component<StagedTableProps> = (props) => {
+	const SortColumn = {
+		name: "name",
+		watchedDate: "watchedDate",
+		rating: "rating"
+	} as const
+	type SortColumn = typeof SortColumn[keyof typeof SortColumn]
+	type SortDirection = "asc" | "desc"
+
 	const displayText = {
 		title: "Staged Letterboxd import data",
 		rowStatusOk: "ok",
@@ -364,6 +362,99 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			tags: "comma, separated"
 		}
 	} as const
+	const defaultSortDirections: Record<SortColumn, SortDirection> = {
+		[SortColumn.name]: "desc",
+		[SortColumn.watchedDate]: "desc",
+		[SortColumn.rating]: "desc"
+	}
+	const defaultSortPriority: SortColumn[] = [SortColumn.name, SortColumn.watchedDate, SortColumn.rating]
+	const sortableColumnsByHeader: Partial<Record<(typeof displayText.headerLabels)[number], SortColumn>> = {
+		Title: SortColumn.name,
+		Rating: SortColumn.rating,
+		WatchedDate: SortColumn.watchedDate
+	}
+	const [sortDirections, setSortDirections] = createSignal<Record<SortColumn, SortDirection>>(defaultSortDirections)
+	const [sortPriority, setSortPriority] = createSignal<SortColumn[]>(defaultSortPriority)
+	const getSortPriorityRank = (column: SortColumn) => sortPriority().findIndex((entry) => entry === column) + 1
+
+	const SortIndicator: Component<{ column: SortColumn }> = (indicatorProps) => (
+		<span
+			class={`ml-1 inline-flex items-start ${
+				sortPriority()[0] === indicatorProps.column ? "opacity-100" : "opacity-50"
+			}`}
+		>
+			<span class="text-xs leading-none">{sortDirections()[indicatorProps.column] === "asc" ? "▲" : "▼"}</span>
+			<sup class="ml-0.5 text-[10px] leading-none">{getSortPriorityRank(indicatorProps.column)}</sup>
+		</span>
+	)
+
+	const compareStrings = (left: string, right: string, direction: SortDirection) => {
+		const leftValue = left.trim()
+		const rightValue = right.trim()
+		if (leftValue.length === 0 && rightValue.length === 0) {
+			return 0
+		}
+		if (leftValue.length === 0) {
+			return 1
+		}
+		if (rightValue.length === 0) {
+			return -1
+		}
+		const compared = leftValue.localeCompare(rightValue)
+		return direction === "asc" ? compared : -compared
+	}
+
+	const compareRatings = (left: string, right: string, direction: SortDirection) => {
+		const leftValue = Number(left)
+		const rightValue = Number(right)
+		const leftIsValid = !Number.isNaN(leftValue)
+		const rightIsValid = !Number.isNaN(rightValue)
+		if (!leftIsValid && !rightIsValid) {
+			return 0
+		}
+		if (!leftIsValid) {
+			return 1
+		}
+		if (!rightIsValid) {
+			return -1
+		}
+		const compared = leftValue - rightValue
+		return direction === "asc" ? compared : -compared
+	}
+
+	const sortedRows = createMemo(() => {
+		const rows = [...props.stagedRows()]
+		rows.sort((left, right) => {
+			for (const column of sortPriority()) {
+				const direction = sortDirections()[column]
+				let compared = 0
+				if (column === SortColumn.name) {
+					compared = compareStrings(left.Title, right.Title, direction)
+				} else if (column === SortColumn.watchedDate) {
+					compared = compareStrings(left.WatchedDate, right.WatchedDate, direction)
+				} else {
+					compared = compareRatings(left.Rating, right.Rating, direction)
+				}
+				if (compared !== 0) {
+					return compared
+				}
+			}
+			return left.id.localeCompare(right.id)
+		})
+		return rows
+	})
+
+	const toggleSort = (column: SortColumn) => {
+		if (sortPriority()[0] !== column) {
+			setSortPriority((previous) => [column, ...previous.filter((entry) => entry !== column)])
+			return
+		}
+		setSortDirections((previous) => ({
+			...previous,
+			[column]: previous[column] === "asc" ? "desc" : "asc"
+		}))
+	}
+
 	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
 	const PressEnterHint = () => (
 		<p class="text-sm mb-2 text-gray-600">
@@ -393,38 +484,53 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 					<thead class="bg-gray-100">
 						<tr>
 							<For each={displayText.headerLabels}>
-								{(header) => <th class="px-3 py-2 text-left text-sm font-semibold">{header}</th>}
+								{(header) => {
+									const sortableColumn = sortableColumnsByHeader[header]
+									return (
+										<th class="px-3 py-2 text-left text-sm font-semibold">
+											<Show
+												when={sortableColumn !== undefined}
+												fallback={<span>{header}</span>}
+											>
+												<button class="underline" type="button" onClick={() => toggleSort(sortableColumn!)}>
+													<span>{header}</span>
+													<SortIndicator column={sortableColumn!} />
+												</button>
+											</Show>
+										</th>
+									)
+								}}
 							</For>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-200">
-						<Index each={props.stagedRows()}>
-							{(row, index) => (
+						<For each={sortedRows()}>
+							{(row) => (
 								<tr class="hover:bg-gray-50">
 									<td class="px-3 py-2 text-sm">
-										{(props.issueCountsByRowIndex().get(index + 1) ?? 0) > 0
-											? getIssueStatusMessage(props.issueCountsByRowIndex().get(index + 1) ?? 0)
+										{props.getIssueCountForRow(row.id) > 0
+											? getIssueStatusMessage(props.getIssueCountForRow(row.id))
 											: displayText.rowStatusOk}
 									</td>
 									<td class="px-3 py-2 text-sm">
-										{row().Title}
+										{row.Title}
 									</td>
 									<td class="px-3 py-2">
 										<input
 											class="w-28 px-2 py-1 text-sm border border-gray-300 rounded font-mono"
-											value={props.getInputValue(row(), "imdbID")}
-											onInput={(event) => props.setDraftValue(row().id, "imdbID", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "imdbID")}
-											onBlur={() => props.handleDraftBlur(row().id, "imdbID")}
+											value={props.getInputValue(row, "imdbID")}
+											onInput={(event) => props.setDraftValue(row.id, "imdbID", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "imdbID")}
+											onBlur={() => props.handleDraftBlur(row.id, "imdbID")}
 											placeholder={displayText.inputPlaceholders.imdbID}
 										/>
 									</td>
 									<td class="px-3 py-2">
 										<input
 											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={props.getInputValue(row(), "Rating")}
-											onInput={(event) => props.setDraftValue(row().id, "Rating", event.currentTarget.value)}
-											onChange={() => props.handleRatingChange(row())}
+											value={props.getInputValue(row, "Rating")}
+											onInput={(event) => props.setDraftValue(row.id, "Rating", event.currentTarget.value)}
+											onChange={() => props.handleRatingChange(row)}
 											placeholder={displayText.inputPlaceholders.rating}
 											step={0.5}
 											min={0.5}
@@ -435,10 +541,10 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 									<td class="px-3 py-2">
 										<input
 											class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={props.getInputValue(row(), "WatchedDate")}
-											onInput={(event) => props.setDraftValue(row().id, "WatchedDate", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "WatchedDate")}
-											onBlur={() => props.handleDraftBlur(row().id, "WatchedDate")}
+											value={props.getInputValue(row, "WatchedDate")}
+											onInput={(event) => props.setDraftValue(row.id, "WatchedDate", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "WatchedDate")}
+											onBlur={() => props.handleDraftBlur(row.id, "WatchedDate")}
 											placeholder={displayText.inputPlaceholders.watchedDate}
 											type="date"
 										/>
@@ -447,34 +553,34 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 										<input
 											class="self-center border"
 											type="checkbox"
-											checked={row().Rewatch}
-											onChange={(event) => props.onToggleRewatch(row().id, event.currentTarget.checked)}
+											checked={row.Rewatch}
+											onChange={(event) => props.onToggleRewatch(row.id, event.currentTarget.checked)}
 										/>
 									</td>
 									<td class="px-3 py-2">
 										<input
 											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-											title={props.getInputValue(row(), "Tags")}
-											value={props.getInputValue(row(), "Tags")}
-											onInput={(event) => props.setDraftValue(row().id, "Tags", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Tags")}
-											onBlur={() => props.handleDraftBlur(row().id, "Tags")}
+											title={props.getInputValue(row, "Tags")}
+											value={props.getInputValue(row, "Tags")}
+											onInput={(event) => props.setDraftValue(row.id, "Tags", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Tags")}
+											onBlur={() => props.handleDraftBlur(row.id, "Tags")}
 											placeholder={displayText.inputPlaceholders.tags}
 										/>
 									</td>
 									<td class="px-3 py-2">
 										<input
 											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-											value={props.getInputValue(row(), "Review")}
-											title={props.getInputValue(row(), "Review")}
-											onInput={(event) => props.setDraftValue(row().id, "Review", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row(), "Review")}
-											onBlur={() => props.handleDraftBlur(row().id, "Review")}
+											value={props.getInputValue(row, "Review")}
+											title={props.getInputValue(row, "Review")}
+											onInput={(event) => props.setDraftValue(row.id, "Review", event.currentTarget.value)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Review")}
+											onBlur={() => props.handleDraftBlur(row.id, "Review")}
 										/>
 									</td>
 								</tr>
 							)}
-						</Index>
+						</For>
 					</tbody>
 				</table>
 			</div>
@@ -538,6 +644,14 @@ const App: Component = () => {
 			counts.set(issue.rowIndex, (counts.get(issue.rowIndex) ?? 0) + 1)
 		}
 		return counts
+	})
+	const issueCountByRowId = createMemo(() => {
+		const counts = issueCountsByRowIndex()
+		const byRowId = new Map<string, number>()
+		for (const [index, row] of stagedRows().entries()) {
+			byRowId.set(row.id, counts.get(index + 1) ?? 0)
+		}
+		return byRowId
 	})
 	const canDownload = createMemo(() => stagedRows().length > 0 && exportIssues().length === 0)
 
@@ -941,7 +1055,7 @@ const App: Component = () => {
 
 			<StagedTable
 				stagedRows={stagedRows}
-				issueCountsByRowIndex={issueCountsByRowIndex}
+				getIssueCountForRow={(rowId) => issueCountByRowId().get(rowId) ?? 0}
 				canDownload={canDownload}
 				restoreMessage={restoreMessage}
 				getInputValue={getInputValue}
