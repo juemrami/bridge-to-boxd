@@ -482,14 +482,35 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	)
 }
 
+const PageFooter: Component = () => {
+	const links = {
+		personal: {
+			label: "Juemrami",
+			href: "https://juemrami.dev"
+		},
+		repo: {
+			label: "GitHub",
+			href: "https://github.com/juemrami/bridge-to-boxd"
+		}
+	}
+	return (
+		<footer class="my-6 text-sm text-center text-gray-600">
+			<p>
+				Developed by <a href={links.personal.href} class="underline">{links.personal.label}</a>. Source code on{" "}
+				<a href={links.repo.href} class="underline">{links.repo.label}</a>.
+			</p>
+		</footer>
+	)
+}
 const App: Component = () => {
 	const displayText = {
 		pageTitle: "Bridge: MovieLens to Letterboxd",
+		pageSummary: "Convert MovieLens' exported ratings, logs, and tags to the Letterboxd import format.",
 		instructionsLabel: "Instructions",
 		instructionsSteps: [
-			"Upload Movielens ratings CSV (required)",
-			"Upload Movielens logs and/or tags CSV (optional)",
-			"Review/edit uploaded Movielens data",
+			"Upload MovieLens ratings CSV (required)",
+			"Upload MovieLens logs and/or tags CSV (optional)",
+			"Review/edit uploaded MovieLens data",
 			"Export to Letterboxd ratings import CSV"
 		],
 		confirmOverwrite: "Importing a new ratings file will overwrite current staged data. Continue?"
@@ -893,7 +914,8 @@ const App: Component = () => {
 	return (
 		<main class="mx-auto p-4 max-w-6xl">
 			<header class="mb-3">
-				<h1 class="text-3xl font-bold mb-2">{displayText.pageTitle}</h1>
+				<h1 class="text-3xl font-bold">{displayText.pageTitle}</h1>
+				<p class="text-sm opacity-75 mb-2">{displayText.pageSummary}</p>
 				<div class="text-sm">
 					<p class="font-semibold mb-2">{displayText.instructionsLabel}</p>
 					<ol class="flex flex-col gap-1 ml-4 list-decimal">
@@ -931,6 +953,7 @@ const App: Component = () => {
 				onDownload={handleDownload}
 				onClear={clearSession}
 			/>
+			<PageFooter />
 		</main>
 	)
 }
