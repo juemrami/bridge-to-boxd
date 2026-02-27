@@ -551,16 +551,20 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 												</a>
 											)}
 										</Show>
+										{
+											/* <button
+											class="ml-2 px-2 py-1 text-xs border rounded bg-white text-gray-700"
+											disabled
+											title="Edit movie (TODO)"
+										>
+											Edit
+										</button> */
+										}
 									</td>
 									<td class="px-3 py-2">
-										<input
-											class="w-28 px-2 py-1 text-sm border border-gray-300 rounded font-mono"
-											value={props.getInputValue(row, "imdbID")}
-											onInput={(event) => props.setDraftValue(row.id, "imdbID", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "imdbID")}
-											onBlur={() => props.handleDraftBlur(row.id, "imdbID")}
-											placeholder={displayText.inputPlaceholders.imdbID}
-										/>
+										<span class="w-28 inline-block px-2 py-1 text-sm font-mono text-gray-700">
+											{props.getInputValue(row, "imdbID")}
+										</span>
 									</td>
 									<td class="px-3 py-2">
 										<input
