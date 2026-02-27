@@ -71,6 +71,7 @@ type PersistedSession = {
 }
 
 type EditableTextField = "imdbID" | "Rating" | "WatchedDate" | "Tags" | "Review"
+type TitleExternalIdType = "imdb" | "tmdb"
 
 const SESSION_STORAGE_KEY = "movie-migrate.import-session.v1"
 
@@ -111,6 +112,21 @@ const parseErrorToMessage = (error: unknown) => {
 		return error.message
 	}
 	return String(error)
+}
+
+const getTitleExternalLink = (idType: TitleExternalIdType, id: string) => {
+	const trimmedId = id.trim()
+	if (trimmedId.length === 0) {
+		return undefined
+	}
+	if (idType === "imdb") {
+		const imdbId = /^tt/i.test(trimmedId) ? `tt${trimmedId.slice(2)}` : `tt${trimmedId}`
+		return `https://www.imdb.com/title/${imdbId}`
+	}
+	if (idType === "tmdb") {
+		return `https://www.themoviedb.org/movie/${trimmedId}`
+	}
+	return undefined
 }
 
 const runMicroOrThrow = async <A, E>(micro: Micro.Micro<A, E>) => {
@@ -463,8 +479,8 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			[column]: previous[column] === "asc" ? "desc" : "asc"
 		}))
 	}
-
 	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
+	const getRowTitleExternalLink = (row: StagedRow) => getTitleExternalLink("imdb", props.getInputValue(row, "imdbID"))
 	const PressEnterHint = () => (
 		<p class="text-sm mb-2 text-gray-600">
 			<strong>Note:</strong> Must press{" "}
@@ -525,7 +541,16 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											: displayText.rowStatusOk}
 									</td>
 									<td class="px-3 py-2 text-sm">
-										{row.Title}
+										<Show
+											when={getRowTitleExternalLink(row)}
+											fallback={<span>{row.Title}</span>}
+										>
+											{(href) => (
+												<a href={href()} target="_blank" rel="noopener noreferrer" class="underline">
+													{row.Title}
+												</a>
+											)}
+										</Show>
 									</td>
 									<td class="px-3 py-2">
 										<input
