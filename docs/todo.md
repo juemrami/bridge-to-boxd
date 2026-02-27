@@ -12,3 +12,6 @@ Priority: High
 
 Priority: Medium
 - Add "Add new movie" flow to create a new linked movie entry.
+
+Priority: Low
+- Prevent layout shift when editing a rating in a sorted table.  Ratings are now only committed on blur/enter so the row doesn't jump while clicking the number input arrows.

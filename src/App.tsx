@@ -353,7 +353,6 @@ type StagedTableProps = {
 	setDraftValue: (rowId: string, field: EditableTextField, value: string) => void
 	handleDraftKeyDown: (event: KeyboardEvent, row: StagedRow, field: EditableTextField) => void
 	handleDraftBlur: (rowId: string, field: EditableTextField) => void
-	handleRatingChange: (row: StagedRow) => void
 	onToggleRewatch: (rowId: string, checked: boolean) => void
 	onDeleteRow: (row: StagedRow) => void
 	onDownload: () => void | Promise<void>
@@ -485,7 +484,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 		<p class="text-sm mb-2 text-gray-600">
 			<strong>Note:</strong> Must press{" "}
 			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Enter</kbd>{" "}
-			to save any changes.
+			to save any edits to Tags or Reviews.
 		</p>
 	)
 	return (
@@ -571,7 +570,8 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
 											value={props.getInputValue(row, "Rating")}
 											onInput={(event) => props.setDraftValue(row.id, "Rating", event.currentTarget.value)}
-											onChange={() => props.handleRatingChange(row)}
+											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Rating")}
+											onBlur={() => props.handleDraftBlur(row.id, "Rating")}
 											placeholder={displayText.inputPlaceholders.rating}
 											step={0.5}
 											min={0.5}
@@ -774,16 +774,18 @@ const App: Component = () => {
 	}
 
 	const handleDraftBlur = (rowId: string, field: EditableTextField) => {
-		clearDraftValue(rowId, field)
-	}
-
-	const handleRatingChange = (row: StagedRow) => {
-		const key = draftKeyFor(row.id, "Rating")
-		const draftValue = draftEdits()[key]
-		if (draftValue !== undefined && draftValue !== row.Rating) {
-			updateRowField(row.id, "Rating", draftValue)
-			clearDraftValue(row.id, "Rating")
+		// for rating we also commit the value on blur; other fields simply discard
+		if (field === "Rating") {
+			const row = stagedRows().find((r) => r.id === rowId)
+			if (row) {
+				const key = draftKeyFor(rowId, field)
+				const draftValue = draftEdits()[key]
+				if (draftValue !== undefined && draftValue !== row.Rating) {
+					updateRowField(rowId, field, draftValue as string)
+				}
+			}
 		}
+		clearDraftValue(rowId, field)
 	}
 
 	const clearSession = () => {
@@ -1128,7 +1130,6 @@ const App: Component = () => {
 				setDraftValue={setDraftValue}
 				handleDraftKeyDown={handleDraftKeyDown}
 				handleDraftBlur={handleDraftBlur}
-				handleRatingChange={handleRatingChange}
 				onToggleRewatch={(rowId, checked) => updateRowField(rowId, "Rewatch", checked)}
 				onDeleteRow={deleteRow}
 				onDownload={handleDownload}
