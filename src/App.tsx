@@ -339,6 +339,7 @@ type StagedTableProps = {
 	handleDraftBlur: (rowId: string, field: EditableTextField) => void
 	handleRatingChange: (row: StagedRow) => void
 	onToggleRewatch: (rowId: string, checked: boolean) => void
+	onDeleteRow: (row: StagedRow) => void
 	onDownload: () => void | Promise<void>
 	onClear: () => void
 }
@@ -360,7 +361,9 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			rating: "0.5-5",
 			watchedDate: "YYYY-MM-DD",
 			tags: "comma, separated"
-		}
+		},
+		deleteButtonHint: "Delete row",
+		deleteConfirmation: "Delete this staged row? This cannot be undone."
 	} as const
 	const defaultSortDirections: Record<SortColumn, SortDirection> = {
 		[SortColumn.name]: "desc",
@@ -386,6 +389,12 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			<span class="text-xs leading-none">{sortDirections()[indicatorProps.column] === "asc" ? "▲" : "▼"}</span>
 			<sup class="ml-0.5 text-[10px] leading-none">{getSortPriorityRank(indicatorProps.column)}</sup>
 		</span>
+	)
+
+	const TrashIcon: Component = () => (
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2m-9 0v14h10V6M10 10v7m4-7v7" />
+		</svg>
 	)
 
 	const compareStrings = (left: string, right: string, direction: SortDirection) => {
@@ -501,6 +510,9 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 									)
 								}}
 							</For>
+							<th class="px-3 py-2 text-left text-sm font-semibold">
+								<span class="sr-only">Delete</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-200">
@@ -577,6 +589,22 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Review")}
 											onBlur={() => props.handleDraftBlur(row.id, "Review")}
 										/>
+									</td>
+									<td class="px-3 py-2 text-sm text-center">
+										<button
+											class="px-2 py-1"
+											type="button"
+											aria-label={displayText.deleteButtonHint}
+											title={displayText.deleteButtonHint}
+											onClick={() => {
+												const confirmed = window.confirm(displayText.deleteConfirmation)
+												if (confirmed) {
+													props.onDeleteRow(row)
+												}
+											}}
+										>
+											<TrashIcon />
+										</button>
 									</td>
 								</tr>
 							)}
@@ -975,6 +1003,15 @@ const App: Component = () => {
 		setStagedRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, [key]: value } : row)))
 	}
 
+	const deleteRow = (row: StagedRow) => {
+		setStagedRows((rows) => rows.filter((current) => current.id !== row.id))
+		setDraftEdits((previous) => {
+			const prefix = `${row.id}::`
+			const next = Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith(prefix)))
+			return next
+		})
+	}
+
 	const handleDownload = async () => {
 		if (!canDownload()) {
 			return
@@ -1064,6 +1101,7 @@ const App: Component = () => {
 				handleDraftBlur={handleDraftBlur}
 				handleRatingChange={handleRatingChange}
 				onToggleRewatch={(rowId, checked) => updateRowField(rowId, "Rewatch", checked)}
+				onDeleteRow={deleteRow}
 				onDownload={handleDownload}
 				onClear={clearSession}
 			/>
