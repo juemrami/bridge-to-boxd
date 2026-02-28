@@ -232,7 +232,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.ratingsLabel}
 					</p>
 					<label for="ratings-file" class="">
-						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<p class="basic-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="ratings-file"
@@ -249,7 +249,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.logsLabel}
 					</p>
 					<label for="logs-file" class="">
-						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<p class="basic-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="logs-file"
@@ -267,7 +267,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.tagsLabel}
 					</p>
 					<label for="tags-file" class="">
-						<p class="border w-max px-1">{displayText.chooseFile}</p>
+						<p class="basic-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="tags-file"
@@ -333,10 +333,17 @@ const TableActions: Component<TableActionsProps> = (props) => {
 	} as const
 	return (
 		<div class="flex gap-2 items-center flex-wrap mb-1">
-			<button class="border px-1" type="button" onClick={props.onDownload} disabled={!props.canDownload()}>
+			<button
+				class="basic-button"
+				type="button"
+				onClick={props.onDownload}
+				disabled={!props.canDownload()}
+			>
 				{displayText.downloadButton}
 			</button>
-			<button class="border px-1" type="button" onClick={props.onClear}>{displayText.clearButton}</button>
+			<button class="basic-button" type="reset" onClick={props.onClear}>
+				{displayText.clearButton}
+			</button>
 			<Show when={props.restoreMessage().length > 0}>
 				<span>{props.restoreMessage()}</span>
 			</Show>
@@ -621,7 +628,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 									</td>
 									<td class="px-3 py-2 text-sm text-center">
 										<button
-											class="px-2 py-1"
+											class="button-behavior px-2 py-1"
 											type="button"
 											aria-label={displayText.deleteButtonHint}
 											title={displayText.deleteButtonHint}

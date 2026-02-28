@@ -13,8 +13,13 @@
 - Use inline Tailwind in TSX/JSX only for spacing and layout:
   - spacing (`p-*`, `px-*`, `gap-*`, `m-*`)
   - layout/position (`flex`, `grid`, `items-*`, `justify-*`, `w-*`, `h-*`, `max-w-*`, `overflow-*`)
-- Keep all color, shadows, borders, and interaction behavior in `src/index.css` utilities.
+- Keep color, shadows, borders, and interaction behavior in `src/index.css` utilities.
 - Prefer semantic utility names (`.primary-text`, `.card`, `.status-error`) over screen-specific names.
+
+#### Behavior utilities (guidance)
+- Behavior utilities (for example, `.button-behavior`) should contain only interaction and behavior-related styles: cursor, transform/translate, transition/animation, pointer and selection handling, and focus/active/disabled interaction rules.
+- Do not include spacing, sizing, typography (text-size, font-weight), radius, background, or color within behavior utilities — those are layout and visual tokens and belong in separate semantic utilities (e.g. `.base-button`, `.base-button.filled`).
+- Use `@utility` (Tailwind v4) or `@layer components` only for composing these semantic utilities inside `src/index.css`.
 
 ---
 
