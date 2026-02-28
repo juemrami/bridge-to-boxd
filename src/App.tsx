@@ -1119,7 +1119,9 @@ const App: Component = () => {
 				onTagsUpload={handleTagsUpload}
 			/>
 
-			<IssuesPanel allIssues={allIssues} />
+			<Show when={allIssues().length > 0}>
+				<IssuesPanel allIssues={allIssues} />
+			</Show>
 
 			<StagedTable
 				stagedRows={stagedRows}
