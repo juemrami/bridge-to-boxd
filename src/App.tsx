@@ -490,7 +490,9 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	const PressEnterHint = () => (
 		<p class="text-sm mb-2 primary-text">
 			<strong>Note:</strong> Must press{" "}
-			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Enter</kbd>{" "}
+			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
+				Enter
+			</kbd>{" "}
 			to save any edits to Tags or Reviews.
 		</p>
 	)
@@ -512,7 +514,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			<PressEnterHint />
 			<div class="overflow-auto border border-gray-300">
 				<table class="w-full">
-					<thead class="bg-gray-100">
+					<thead class="bg-gray-100 dark:bg-gray-700">
 						<tr>
 							<For each={displayText.headerLabels}>
 								{(header) => {
@@ -540,7 +542,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 					<tbody class="divide-y divide-gray-200">
 						<For each={sortedRows()}>
 							{(row) => (
-								<tr class="hover:bg-gray-50">
+								<tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
 									{/* Status */}
 									<td class="px-3 py-2 text-sm">
 										{props.getIssueCountForRow(row.id) > 0
