@@ -241,7 +241,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 							onChange={props.onRatingsUpload}
 						/>
 					</label>
-					<p class="text-sm">{props.renderUploadMeta(props.ratingsUpload())}</p>
+					<p class="text-sm secondary-text">{props.renderUploadMeta(props.ratingsUpload())}</p>
 				</div>
 
 				<div id="logs-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
@@ -259,7 +259,7 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 							onChange={props.onLogsUpload}
 						/>
 					</label>
-					<p class="text-sm">{props.renderUploadMeta(props.logsUpload())}</p>
+					<p class="text-sm secondary-text">{props.renderUploadMeta(props.logsUpload())}</p>
 				</div>
 
 				<div id="tags-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
@@ -277,10 +277,10 @@ const UploadPanel: Component<UploadPanelProps> = (props) => {
 							onChange={props.onTagsUpload}
 						/>
 					</label>
-					<p class="text-sm">{props.renderUploadMeta(props.tagsUpload())}</p>
+					<p class="text-sm secondary-text">{props.renderUploadMeta(props.tagsUpload())}</p>
 				</div>
 			</div>
-			<p class="text-sm">
+			<p id="upload-summary" class="text-sm">
 				{formatUploadSummaryText(props.stagedRows().length, props.allIssues().length)}
 			</p>
 		</section>
@@ -405,7 +405,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	const SortIndicator: Component<{ column: SortColumn }> = (indicatorProps) => (
 		<span
 			class={`ml-1 inline-flex items-start ${
-				sortPriority()[0] === indicatorProps.column ? "opacity-100" : "opacity-50"
+				sortPriority()[0] === indicatorProps.column ? "opacity-100" : "opacity-70"
 			}`}
 		>
 			<span class="text-xs leading-none">{sortDirections()[indicatorProps.column] === "asc" ? "▲" : "▼"}</span>
@@ -488,7 +488,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
 	const getRowTitleExternalLink = (row: StagedRow) => getTitleExternalLink("imdb", props.getInputValue(row, "imdbID"))
 	const PressEnterHint = () => (
-		<p class="text-sm mb-2 text-gray-600">
+		<p class="text-sm mb-2 primary-text">
 			<strong>Note:</strong> Must press{" "}
 			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 border border-gray-300 rounded">Enter</kbd>{" "}
 			to save any edits to Tags or Reviews.
@@ -541,18 +541,20 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 						<For each={sortedRows()}>
 							{(row) => (
 								<tr class="hover:bg-gray-50">
+									{/* Status */}
 									<td class="px-3 py-2 text-sm">
 										{props.getIssueCountForRow(row.id) > 0
 											? getIssueStatusMessage(props.getIssueCountForRow(row.id))
 											: displayText.rowStatusOk}
 									</td>
+									{/* Title */}
 									<td class="px-3 py-2 text-sm">
 										<Show
 											when={getRowTitleExternalLink(row)}
 											fallback={<span>{row.Title}</span>}
 										>
 											{(href) => (
-												<a href={href()} target="_blank" rel="noopener noreferrer" class="underline">
+												<a href={href()} target="_blank" rel="noopener noreferrer" class="external-link">
 													{row.Title}
 												</a>
 											)}
@@ -567,11 +569,13 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 										</button> */
 										}
 									</td>
+									{/* Title ID */}
 									<td class="px-3 py-2">
-										<span class="w-28 inline-block px-2 py-1 text-sm font-mono text-gray-700">
+										<span class="w-28 inline-block px-2 py-1 text-sm font-mono">
 											{props.getInputValue(row, "imdbID")}
 										</span>
 									</td>
+									{/* Rating */}
 									<td class="px-3 py-2">
 										<input
 											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
@@ -586,6 +590,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											type="number"
 										/>
 									</td>
+									{/* Watched Date */}
 									<td class="px-3 py-2">
 										<input
 											class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
@@ -597,6 +602,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											type="date"
 										/>
 									</td>
+									{/* Rewatch checkbox */}
 									<td class="text-center">
 										<input
 											class="self-center border"
@@ -605,6 +611,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											onChange={(event) => props.onToggleRewatch(row.id, event.currentTarget.checked)}
 										/>
 									</td>
+									{/* Tags */}
 									<td class="px-3 py-2">
 										<input
 											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -616,6 +623,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											placeholder={displayText.inputPlaceholders.tags}
 										/>
 									</td>
+									{/* Review */}
 									<td class="px-3 py-2">
 										<input
 											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -626,9 +634,10 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 											onBlur={() => props.handleDraftBlur(row.id, "Review")}
 										/>
 									</td>
+									{/* Delete button */}
 									<td class="px-3 py-2 text-sm text-center">
 										<button
-											class="button-behavior px-2 py-1"
+											class="button-behavior px-2 py-1 text-delete-red"
 											type="button"
 											aria-label={displayText.deleteButtonHint}
 											title={displayText.deleteButtonHint}
@@ -664,7 +673,7 @@ const PageFooter: Component = () => {
 		}
 	}
 	return (
-		<footer class="my-6 text-sm text-center text-gray-600">
+		<footer class="my-6 text-sm text-center secondary-text">
 			<p>
 				Developed by <a href={links.personal.href} class="underline">{links.personal.label}</a>. Source code on{" "}
 				<a href={links.repo.href} class="underline">{links.repo.label}</a>.
@@ -1103,11 +1112,11 @@ const App: Component = () => {
 	return (
 		<main class="mx-auto p-4 max-w-6xl">
 			<header class="mb-3">
-				<h1 class="text-3xl font-bold">{displayText.pageTitle}</h1>
-				<p class="text-sm opacity-75 mb-2">{displayText.pageSummary}</p>
+				<h1 id="page-title" class="text-3xl font-bold">{displayText.pageTitle}</h1>
+				<p id="page-summary" class="secondary-text text-sm mb-2">{displayText.pageSummary}</p>
 				<div class="text-sm">
 					<p class="font-semibold mb-2">{displayText.instructionsLabel}</p>
-					<ol class="flex flex-col gap-1 ml-4 list-decimal">
+					<ol id="instructions-steps" class="flex flex-col gap-1 ml-4 list-decimal">
 						<For each={displayText.instructionsSteps}>{(step) => <li>{step}</li>}</For>
 					</ol>
 				</div>
