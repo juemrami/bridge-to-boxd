@@ -396,7 +396,8 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 			imdbID: "0050083",
 			rating: "0.5-5",
 			watchedDate: "YYYY-MM-DD",
-			tags: "comma, separated"
+			tags: "comma, separated",
+			review: "Edit review"
 		},
 		tagEditor: {
 			emptyState: "No tags",
@@ -733,8 +734,9 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 									</td>
 									{/* Review */}
 									<td class="px-3 py-2">
-										<input
-											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+										<textarea
+											class="px-2 py-1 min-h-6 text-sm border border-gray-300 rounded"
+											placeholder={displayText.inputPlaceholders.review}
 											value={props.getInputValue(row, "Review")}
 											title={props.getInputValue(row, "Review")}
 											onInput={(event) => props.setDraftValue(row.id, "Review", event.currentTarget.value)}
