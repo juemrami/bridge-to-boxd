@@ -92,20 +92,31 @@ const toWatchedDate = (dateTime: string) => {
 	return `${year}-${month}-${day}`
 }
 
-const addUniqueTag = (existingCsv: string, nextTag: string) => {
-	const normalized = nextTag.trim()
-	if (normalized.length === 0) {
-		return existingCsv
+const splitTags = (value: string) => value.split(/[\n,\r]+/)
+
+const normalizeTag = (value: string) => value.trim().toLowerCase()
+
+const normalizeTags = (values: string[]) => {
+	const deduped: string[] = []
+	const seen = new Set<string>()
+	for (const value of values) {
+		const normalized = normalizeTag(value)
+		if (normalized.length === 0 || seen.has(normalized)) {
+			continue
+		}
+		seen.add(normalized)
+		deduped.push(normalized)
 	}
-	const tags = existingCsv
-		.split(",")
-		.map((tag) => tag.trim())
-		.filter((tag) => tag.length > 0)
-	if (!tags.includes(normalized)) {
-		tags.push(normalized)
-	}
-	return tags.join(", ")
+	return deduped
 }
+
+const tagsToCsv = (values: string[]) => normalizeTags(values).join(", ")
+
+const parseTagsCsv = (value: string) => normalizeTags(splitTags(value))
+
+const normalizeTagsCsv = (value: string) => tagsToCsv(splitTags(value))
+
+const mergeTagCsv = (existingCsv: string, nextTags: string[]) => tagsToCsv([...splitTags(existingCsv), ...nextTags])
 
 const parseErrorToMessage = (error: unknown) => {
 	if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
@@ -360,6 +371,8 @@ type StagedTableProps = {
 	setDraftValue: (rowId: string, field: EditableTextField, value: string) => void
 	handleDraftKeyDown: (event: KeyboardEvent, row: StagedRow, field: EditableTextField) => void
 	handleDraftBlur: (rowId: string, field: EditableTextField) => void
+	onAddRowTags: (rowId: string, tags: string[]) => void
+	onRemoveRowTag: (rowId: string, tag: string) => void
 	onToggleRewatch: (rowId: string, checked: boolean) => void
 	onDeleteRow: (row: StagedRow) => void
 	onDownload: () => void | Promise<void>
@@ -378,12 +391,21 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 		title: "Staged Letterboxd import data",
 		rowStatusOk: "ok",
 		headerLabels: ["Status", "Title", "IMDb Title ID", "Rating", "WatchedDate", "Rewatch", "Tags", "Review"],
+		deleteColumnSrOnly: "Delete",
 		inputPlaceholders: {
 			imdbID: "0050083",
 			rating: "0.5-5",
 			watchedDate: "YYYY-MM-DD",
 			tags: "comma, separated"
 		},
+		tagEditor: {
+			emptyState: "No tags",
+			addPlaceholder: "Add a tag",
+			editTitle: "Edit tags",
+			stopEditingTitle: "Stop Editing",
+			removePrefix: "Remove"
+		},
+		clearConfirmation: "Are you sure you want to clear all staged data? This cannot be undone.",
 		deleteButtonHint: "Delete row",
 		deleteConfirmation: "Delete this staged row? This cannot be undone."
 	} as const
@@ -400,6 +422,8 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	}
 	const [sortDirections, setSortDirections] = createSignal<Record<SortColumn, SortDirection>>(defaultSortDirections)
 	const [sortPriority, setSortPriority] = createSignal<SortColumn[]>(defaultSortPriority)
+	const [tagEditorByRowId, setTagEditorByRowId] = createSignal<Record<string, boolean>>({})
+	const [newTagByRowId, setNewTagByRowId] = createSignal<Record<string, string>>({})
 	const getSortPriorityRank = (column: SortColumn) => sortPriority().findIndex((entry) => entry === column) + 1
 
 	const SortIndicator: Component<{ column: SortColumn }> = (indicatorProps) => (
@@ -416,6 +440,19 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	const TrashIcon: Component = () => (
 		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2m-9 0v14h10V6M10 10v7m4-7v7" />
+		</svg>
+	)
+
+	const EditIcon: Component = () => (
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9" />
+			<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z" />
+		</svg>
+	)
+
+	const CheckIcon: Component = () => (
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" />
 		</svg>
 	)
 
@@ -487,13 +524,36 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 	}
 	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
 	const getRowTitleExternalLink = (row: StagedRow) => getTitleExternalLink("imdb", props.getInputValue(row, "imdbID"))
+	const isTagEditorOpen = (rowId: string) => tagEditorByRowId()[rowId] === true
+	const setTagEditorState = (rowId: string, open: boolean) => {
+		setTagEditorByRowId((previous) => ({ ...previous, [rowId]: open }))
+	}
+	const getTagsForRow = (row: StagedRow) => parseTagsCsv(props.getInputValue(row, "Tags"))
+	const getPendingTag = (rowId: string) => newTagByRowId()[rowId] ?? ""
+	const getTagEditorToggleLabel = (rowId: string) =>
+		isTagEditorOpen(rowId) ? displayText.tagEditor.stopEditingTitle : displayText.tagEditor.editTitle
+	const setPendingTag = (rowId: string, value: string) => {
+		setNewTagByRowId((previous) => ({ ...previous, [rowId]: value }))
+	}
+	const addTagToRow = (row: StagedRow) => {
+		const nextTag = getPendingTag(row.id)
+		const nextTags = normalizeTags(splitTags(nextTag))
+		if (nextTags.length === 0) {
+			return
+		}
+		props.onAddRowTags(row.id, nextTags)
+		setPendingTag(row.id, "")
+	}
+	const removeTagFromRow = (row: StagedRow, tagToRemove: string) => {
+		props.onRemoveRowTag(row.id, tagToRemove)
+	}
 	const PressEnterHint = () => (
 		<p class="text-sm mb-2 primary-text">
-			<strong>Note:</strong> Must press{" "}
+			<strong>Tip:</strong> Press{" "}
 			<kbd class="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
 				Enter
 			</kbd>{" "}
-			to save any edits to Tags or Reviews.
+			to save quickly. Clicking away also saves edits.
 		</p>
 	)
 	return (
@@ -504,8 +564,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 				restoreMessage={props.restoreMessage}
 				onDownload={props.onDownload}
 				onClear={() => {
-					const confirmed = !props.canDownload() ||
-						window.confirm("Are you sure you want to clear all staged data? This cannot be undone.")
+					const confirmed = !props.canDownload() || window.confirm(displayText.clearConfirmation)
 					if (confirmed) {
 						props.onClear()
 					}
@@ -535,7 +594,7 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 								}}
 							</For>
 							<th class="px-3 py-2 text-left text-sm font-semibold">
-								<span class="sr-only">Delete</span>
+								<span class="sr-only">{displayText.deleteColumnSrOnly}</span>
 							</th>
 						</tr>
 					</thead>
@@ -614,16 +673,63 @@ const StagedTable: Component<StagedTableProps> = (props) => {
 										/>
 									</td>
 									{/* Tags */}
-									<td class="px-3 py-2">
-										<input
-											class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-											title={props.getInputValue(row, "Tags")}
-											value={props.getInputValue(row, "Tags")}
-											onInput={(event) => props.setDraftValue(row.id, "Tags", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Tags")}
-											onBlur={() => props.handleDraftBlur(row.id, "Tags")}
-											placeholder={displayText.inputPlaceholders.tags}
-										/>
+									<td class="px-3 py-2 w-min">
+										<div class="flex flex-col">
+											<div class="flex justify-between items-start">
+												{/* Chips */}
+												<div class="flex flex-wrap max-w-60 gap-1 min-h-7">
+													<Show
+														when={getTagsForRow(row).length > 0}
+														fallback={<span class="text-xs secondary-text">{displayText.tagEditor.emptyState}</span>}
+													>
+														<For each={getTagsForRow(row)}>
+															{(tag) => (
+																<span class="inline-flex items-center h-min gap-1 px-1.25 py-px text-xs border border-gray-300 rounded">
+																	<span>{tag}</span>
+																	<button
+																		hidden={!isTagEditorOpen(row.id)}
+																		type="button"
+																		class="button-behavior text-xs"
+																		title={`${displayText.tagEditor.removePrefix} ${tag}`}
+																		onClick={() => removeTagFromRow(row, tag)}
+																	>
+																		×
+																	</button>
+																</span>
+															)}
+														</For>
+													</Show>
+												</div>
+												{/* Edit Chips toggle */}
+												<button
+													type="button"
+													class="button-behavior h-min inline-flex items-center justify-center"
+													title={getTagEditorToggleLabel(row.id)}
+													onClick={() => setTagEditorState(row.id, !isTagEditorOpen(row.id))}
+												>
+													<Show when={isTagEditorOpen(row.id)} fallback={<EditIcon />}>
+														<CheckIcon />
+													</Show>
+													<span class="sr-only">{getTagEditorToggleLabel(row.id)}</span>
+												</button>
+											</div>
+											<Show when={isTagEditorOpen(row.id)}>
+												<input
+													class="w-[50%] px-2 py-1 text-xs border border-gray-300 rounded mt-1"
+													placeholder={displayText.tagEditor.addPlaceholder}
+													value={getPendingTag(row.id)}
+													onInput={(event) => setPendingTag(row.id, event.currentTarget.value)}
+													onKeyDown={(event) => {
+														if (event.key === "Enter") {
+															event.preventDefault()
+															const inputElement = event.currentTarget
+															addTagToRow(row)
+															requestAnimationFrame(() => inputElement.focus())
+														}
+													}}
+												/>
+											</Show>
+										</div>
 									</td>
 									{/* Review */}
 									<td class="px-3 py-2">
@@ -771,6 +877,9 @@ const App: Component = () => {
 			}
 			// If not valid format, save as-is (will likely fail Letterboxd validation)
 		}
+		if (field === "Tags") {
+			draftValue = normalizeTagsCsv(draftValue)
+		}
 		if (draftValue !== row[field]) {
 			updateRowField(row.id, field, draftValue)
 		}
@@ -792,18 +901,33 @@ const App: Component = () => {
 	}
 
 	const handleDraftBlur = (rowId: string, field: EditableTextField) => {
-		// for rating we also commit the value on blur; other fields simply discard
-		if (field === "Rating") {
-			const row = stagedRows().find((r) => r.id === rowId)
-			if (row) {
-				const key = draftKeyFor(rowId, field)
-				const draftValue = draftEdits()[key]
-				if (draftValue !== undefined && draftValue !== row.Rating) {
-					updateRowField(rowId, field, draftValue as string)
-				}
-			}
+		const row = stagedRows().find((current) => current.id === rowId)
+		if (row) {
+			commitDraftValue(row, field)
+			return
 		}
 		clearDraftValue(rowId, field)
+	}
+
+	const addRowTags = (rowId: string, tags: string[]) => {
+		setStagedRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, Tags: mergeTagCsv(row.Tags, tags) } : row)))
+		clearDraftValue(rowId, "Tags")
+	}
+
+	const removeRowTag = (rowId: string, tagToRemove: string) => {
+		setStagedRows((rows) =>
+			rows.map((row) => {
+				if (row.id !== rowId) {
+					return row
+				}
+				const nextTags = parseTagsCsv(row.Tags).filter((tag) => tag !== normalizeTag(tagToRemove))
+				return {
+					...row,
+					Tags: tagsToCsv(nextTags)
+				}
+			})
+		)
+		clearDraftValue(rowId, "Tags")
 	}
 
 	const clearSession = () => {
@@ -1014,13 +1138,9 @@ const App: Component = () => {
 					if (!tags || tags.length === 0) {
 						return row
 					}
-					let merged = row.Tags
-					for (const tag of tags) {
-						merged = addUniqueTag(merged, tag)
-					}
 					return {
 						...row,
-						Tags: merged
+						Tags: mergeTagCsv(row.Tags, tags)
 					}
 				})
 			)
@@ -1150,6 +1270,8 @@ const App: Component = () => {
 				setDraftValue={setDraftValue}
 				handleDraftKeyDown={handleDraftKeyDown}
 				handleDraftBlur={handleDraftBlur}
+				onAddRowTags={addRowTags}
+				onRemoveRowTag={removeRowTag}
 				onToggleRewatch={(rowId, checked) => updateRowField(rowId, "Rewatch", checked)}
 				onDeleteRow={deleteRow}
 				onDownload={handleDownload}
