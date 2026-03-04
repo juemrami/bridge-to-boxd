@@ -37,14 +37,17 @@
     // Miscellaneoaus
     "skipLibCheck": true, // Skip type checking of third party libraries.
     "noErrorTruncation": true, // Do not truncate error messages.
-    "types": ["vite/client"], // vite/client provides import.meta.env, import.meta.hot, etc.
+    "types": ["vite/client", "node"], // vite/client provides import.meta.env, import.meta.hot, etc.
     "plugins": [
       {
         "name": "@effect/language-service",
         "transform": "@effect/language-service/transform",
         "namespaceImportPackages": ["effect", "@effect/*"]
       }
-    ]
+    ],
+    "paths": {
+      "@src/*": ["./src/*"],
+    }
   },
   "include": [
     "src/**/*",

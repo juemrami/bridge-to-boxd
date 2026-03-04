@@ -1,12 +1,12 @@
-import { Micro } from "effect"
-import { type Accessor, type Component, createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js"
-import { type LetterboxdImportRow, toCsvBlobEffect } from "./modules/letterboxd"
+import { type LetterboxdImportRow, toCsvBlobEffect } from "@src/modules/letterboxd"
 import {
 	parseMovielensLogsCsv,
 	parseMovielensRatingsCsv,
 	parseMovielensTagsCsv,
 	type ValidationError
-} from "./modules/movielens"
+} from "@src/modules/movielens"
+import { Micro } from "effect"
+import { type Accessor, type Component, createEffect, createMemo, createSignal, For, onMount, Show } from "solid-js"
 
 const UploadStatus = {
 	idle: "idle",
