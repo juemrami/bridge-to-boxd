@@ -256,7 +256,7 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 				}}
 			/>
 			<PressEnterHint />
-			<div class="overflow-auto border border-gray-300">
+			<div class="overflow-auto border border-gray-300 dark:border-gray-600 rounded-sm">
 				<table class="w-full">
 					<thead class="bg-gray-100 dark:bg-gray-700">
 						<tr>
@@ -283,10 +283,10 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 							</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-gray-200">
+					<tbody class="divide-y divide-gray-200 dark:divide-gray-600">
 						<For each={sortedRows()}>
 							{(row) => (
-								<tr class="hover:bg-gray-50 dark:hover:bg-gray-600">
+								<tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
 									{/* Status */}
 									<td class="px-3 py-2 text-sm">
 										{props.getIssueCountForRow(row.id) > 0
