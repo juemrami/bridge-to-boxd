@@ -20,7 +20,7 @@ export const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.ratingsLabel}
 					</p>
 					<label for="ratings-file" class="">
-						<p class="basic-button w-max">{displayText.chooseFile}</p>
+						<p class="outlined-orange-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="ratings-file"
@@ -37,7 +37,7 @@ export const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.logsLabel}
 					</p>
 					<label for="logs-file" class="">
-						<p class="basic-button w-max">{displayText.chooseFile}</p>
+						<p class="outlined-orange-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="logs-file"
@@ -55,7 +55,7 @@ export const UploadPanel: Component<UploadPanelProps> = (props) => {
 						{displayText.tagsLabel}
 					</p>
 					<label for="tags-file" class="">
-						<p class="basic-button w-max">{displayText.chooseFile}</p>
+						<p class="outlined-orange-button w-max">{displayText.chooseFile}</p>
 						<input
 							class="w-0 h-0 opacity-0 absolute"
 							id="tags-file"

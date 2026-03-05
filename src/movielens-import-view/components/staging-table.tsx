@@ -31,14 +31,14 @@ const TableActions: Component<TableActionsProps> = (props) => {
 	return (
 		<div class="flex gap-2 items-center flex-wrap mb-1">
 			<button
-				class="basic-button"
+				class="green-button"
 				type="button"
 				onClick={props.onDownload}
 				disabled={!props.canDownload()}
 			>
 				{displayText.downloadButton}
 			</button>
-			<button class="basic-button" type="reset" onClick={props.onClear}>
+			<button class="red-button" type="reset" onClick={props.onClear}>
 				{displayText.clearButton}
 			</button>
 			<Show when={props.restoreMessage().length > 0}>
@@ -115,14 +115,28 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 	)
 
 	const EditIcon: Component = () => (
-		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.5"
+			class="text-blue-600 w-4 h-4"
+			aria-hidden="true"
+		>
 			<path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9" />
 			<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z" />
 		</svg>
 	)
 
 	const CheckIcon: Component = () => (
-		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="3"
+			class="text-confirm-green w-4 h-4"
+			aria-hidden="true"
+		>
 			<path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5" />
 		</svg>
 	)
@@ -360,7 +374,7 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 																	<button
 																		hidden={!isTagEditorOpen(row.id)}
 																		type="button"
-																		class="button-behavior text-xs"
+																		class="button-behavior text-xs font-medium text-delete-red border-l border-l-gray-300 pl-1"
 																		title={`${displayText.tagEditor.removePrefix} ${tag}`}
 																		onClick={() => removeTagFromRow(row, tag)}
 																	>

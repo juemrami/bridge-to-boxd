@@ -6,6 +6,11 @@
 
 @theme {
   --color-delete-red: #dc2626;
+  --color-movielens-orange: #f06624;
+  --color-letterboxd-orange: #FF9900;
+  --color-letterboxd-green: #00E054;
+  --color-letterboxd-blue: #40BCF4;
+  --color-confirm-green: #00ac1c;
 }
 
 @utility button-behavior {
@@ -23,7 +28,7 @@
   @apply text-gray-900 dark:text-gray-200;
 }
 @utility secondary-text {
-  @apply text-gray-400 dark:text-gray-600;
+  @apply text-gray-400 dark:text-gray-500;
 }
 :root {
   @apply primary-text;
@@ -35,10 +40,29 @@
   @apply visited:text-purple-600 dark:visited:text-purple-400;
 }
 
-@layer components {
-  .basic-button {
-    @apply button-behavior;
-    @apply border px-1;
-  }
+@utility basic-button {
+  @apply button-behavior;
+  @apply border px-1.5 rounded-sm;
+  @apply shadow-sm hover:shadow-md active:shadow-none;
+  @apply dark:shadow-gray-700;
 }
 
+@utility green-button {
+  @apply basic-button font-medium;
+  @apply border-confirm-green bg-confirm-green text-white;
+}
+
+@utility red-button {
+  @apply basic-button font-medium;
+  @apply bg-delete-red border-delete-red text-white;
+}
+
+@utility orange-button {
+  @apply basic-button font-medium;
+  @apply bg-movielens-orange border-movielens-orange text-white;
+}
+
+@utility outlined-orange-button {
+  @apply basic-button font-semibold;
+  @apply bg-transparent border-movielens-orange text-movielens-orange;
+}
