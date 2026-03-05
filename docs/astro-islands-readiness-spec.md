@@ -70,6 +70,12 @@ Potential `.astro` + islands split:
 - `IssuesPanel` island: likely `client:idle` or `client:visible`.
 - `TableActions` can stay with `StagedTable` or be separate depending on shared state strategy.
 
+### Migration quirk note (CSS ownership)
+- With Astro islands, hydration directives (`client:load`, `client:only`, etc.) do not guarantee when global CSS is linked in HTML.
+- CSS inclusion depends on module graph ownership. Importing global CSS from an island entry can attach it to the client bundle instead of the page head.
+- For immediate first-paint styles, keep global CSS imported from the `.astro` page or shared layout entry.
+- During migration, if styling is inconsistent, temporarily import the same stylesheet from both the page/layout and the island entry until chunking is stable.
+
 Important constraint:
 - Multiple Astro islands hydrate independently. To split beyond one island, mutable state must move from component-local signals to a shared client module/store.
 

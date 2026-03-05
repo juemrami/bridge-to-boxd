@@ -10,17 +10,17 @@
     // ],
     "strictNullChecks": true,
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
-     // Use incremental builds with project references.
+    // Use incremental builds with project references.
     "incremental": true,
     "composite": true,
     // Target modern JavaScript (ES2022+) whilst staying closely compatible with the Node.js module system.
     "target": "ES2022",
-  "module": "ESNext",
+    "module": "ESNext",
     "moduleDetection": "force", // Treat every non-declaration file as a module.
     "esModuleInterop": false, // Do not fiddle with import/export statements
-  "verbatimModuleSyntax": false, // Bundlers handle ESM/CJS interop; keep TS ergonomics.
+    "verbatimModuleSyntax": false, // Bundlers handle ESM/CJS interop; keep TS ergonomics.
     "allowJs": false, // If you touch this, a puppy dies.
-  // "rewriteRelativeImportExtensions": true, // Only needed when emitting Node ESM with `tsc`.
+    // "rewriteRelativeImportExtensions": true, // Only needed when emitting Node ESM with `tsc`.
     // JSX — SolidJS uses babel/Vite to transform JSX; TS just preserves it.
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
@@ -34,10 +34,13 @@
     "noUnusedLocals": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    // Miscellaneoaus
+    // Miscellaneous
     "skipLibCheck": true, // Skip type checking of third party libraries.
     "noErrorTruncation": true, // Do not truncate error messages.
-    "types": ["vite/client", "node"], // vite/client provides import.meta.env, import.meta.hot, etc.
+    "types": [
+      "astro/client",
+      "node"
+    ],
     "plugins": [
       {
         "name": "@effect/language-service",
@@ -52,7 +55,6 @@
   "include": [
     "src/**/*",
     "ci/**/*",
-    "tsup.config.ts",
     "**/*.d.ts"
   ],
   "exclude": [
