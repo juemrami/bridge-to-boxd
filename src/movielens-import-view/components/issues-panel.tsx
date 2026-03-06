@@ -1,6 +1,6 @@
 import type { Component } from "solid-js"
 import { For, Show } from "solid-js"
-import type { IssuesPanelProps } from "../index"
+import type { IssuesPanelProps } from "../import-session-store"
 
 export const IssuesPanel: Component<IssuesPanelProps> = (props) => {
 	const displayText = {

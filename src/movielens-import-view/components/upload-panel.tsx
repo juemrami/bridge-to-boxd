@@ -1,5 +1,5 @@
 import type { Component, JSX } from "solid-js"
-import { type UploadPanelProps } from "../index"
+import { type UploadPanelProps } from "../import-session-store"
 
 export const UploadPanel: Component<UploadPanelProps> = (props) => {
 	const displayText = {

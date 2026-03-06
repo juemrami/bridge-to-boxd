@@ -1,5 +1,5 @@
 import { type Accessor, type Component, createMemo, createSignal, For, Show } from "solid-js"
-import { normalizeTags, parseTagsCsv, splitTags, type StagedRow, type StagedTableProps } from "../index"
+import { normalizeTags, parseTagsCsv, splitTags, type StagedRow, type StagedTableProps } from "../import-session-store"
 
 type TitleExternalIdType = "imdb" | "tmdb"
 const getTitleExternalLink = (idType: TitleExternalIdType, id: string) => {
