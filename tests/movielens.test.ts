@@ -1,7 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
-import { Effect } from "effect"
+import { Effect, FileSystem } from "effect"
 
-import { FileSystem } from "@effect/platform"
 import { parseMovielensLogsCsv, parseMovielensRatingsCsv, parseMovielensTagsCsv } from "../src/modules/movielens"
 import { withNodeFileSystem } from "./helpers/effectTestUtils"
 
@@ -74,13 +73,13 @@ describe("movielens", () => {
 			const lines = ratingsText.split(/\r?\n/)
 			lines[0] = "movie_id,imdb_id,tmdb_id,rating,title,average_rating"
 
-			const either = yield* Effect.either(
+			const either = yield* Effect.result(
 				parseMovielensRatingsCsv(new Blob([lines.join("\n")], { type: "text/csv" }))
 			)
 
-			expect(either._tag).toBe("Left")
-			if (either._tag === "Left") {
-				expect(either.left._tag).toBe("CsvHeaderValidationError")
+			expect(either._tag).toBe("Failure")
+			if (either._tag === "Failure") {
+				expect(either.failure._tag).toBe("CsvHeaderValidationError")
 			}
 		}).pipe(withNodeFileSystem))
 

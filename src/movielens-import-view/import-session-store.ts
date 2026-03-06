@@ -134,7 +134,7 @@ const runEffectOrThrow = async <A, E>(effect: Effect.Effect<A, E>) => {
 	if (Exit.isSuccess(exit)) {
 		return exit.value
 	}
-	const failure = Cause.failureOption(exit.cause)
+	const failure = Cause.findErrorOption(exit.cause)
 	if (Option.isSome(failure)) {
 		throw failure.value
 	}

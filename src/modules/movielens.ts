@@ -1,4 +1,4 @@
-import { Data, Effect } from "effect"
+import { Data, Effect, Result } from "effect"
 
 const LOGS_EXPORT_COLUMNS = ["datetime", "login_id", "action_type", "log_json"] as const
 const RATINGS_EXPORT_COLUMNS = ["movie_id", "imdb_id", "tmdb_id", "rating", "average_rating", "title"] as const
@@ -232,7 +232,7 @@ export const parseMovielensLogsCsv = (data: Blob) =>
 			let jsonParseFailed = false
 
 			if (log_json_raw.length > 0) {
-				const parsed = yield* Effect.either(
+				const parsed = yield* Effect.result(
 					Effect.try({
 						try: () => JSON.parse(log_json_raw) as unknown,
 						catch: (cause) => ({
@@ -248,11 +248,11 @@ export const parseMovielensLogsCsv = (data: Blob) =>
 					})
 				)
 
-				if (parsed._tag === "Left") {
+				if (Result.isFailure(parsed)) {
 					jsonParseFailed = true
-					errors.push(parsed.left)
+					errors.push(parsed.failure)
 				} else {
-					logJson = parsed.right
+					logJson = parsed.success
 				}
 			}
 

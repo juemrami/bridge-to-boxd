@@ -12,6 +12,9 @@
     "hide-files.files": [],
     "git.enabled": false,
     "cSpell.words": [
-        "Movielens"
+        "imdb",
+        "Movielens",
+        "Rewatch",
+        "tmdb"
     ],
 }
