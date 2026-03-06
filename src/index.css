@@ -18,7 +18,7 @@
   @apply transition-transform duration-100 ease-in-out;
   @apply active:translate-y-0.25 active:translate-x-[calc(0.125rem)];
   @apply select-none pointer-fine:select-auto;
-  @apply disabled:pointer-events-none;
+  @apply disabled:pointer-events-none disabled:select-none;
   @apply will-change-transform;
   @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
   @apply touch-manipulation;
