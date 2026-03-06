@@ -9,6 +9,7 @@ Priority: High
   - implement efficient provider searching (todo: brainstorm).
   - ensure modal keyboard-accessibility; support arrow navigation and enter-to-select.
 - Add ability to swap or choose which provider (TMDb vs IMDb) is used as the staged `titleID`.
+- Fix layout shift around Edit Tags button and Tags column.
 
 Priority: Medium
 - Add "Add new movie" flow to create a new linked movie entry.
