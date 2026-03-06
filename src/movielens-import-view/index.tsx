@@ -1,4 +1,3 @@
-import PageFooter from "@src/components/page-footer"
 import { type LetterboxdImportRow, toCsvBlobEffect } from "@src/modules/letterboxd"
 import {
 	parseMovielensLogsCsv,
@@ -719,7 +718,6 @@ const App: Component = () => {
 				onDownload={handleDownload}
 				onClear={clearSession}
 			/>
-			<PageFooter />
 		</main>
 	)
 }

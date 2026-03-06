@@ -1,0 +1,34 @@
+---
+import globalStyles from "@src/index.css?url"
+
+const links = {
+	personal: {
+		label: "Juemrami",
+		href: "https://juemrami.dev"
+	},
+	repo: {
+		label: "GitHub",
+		href: "https://github.com/juemrami/bridge-to-boxd"
+	}
+}
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#000000" />
+		<link rel="stylesheet" href={globalStyles} />
+		<title>Bridge 2 Letterboxd</title>
+	</head>
+	<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <slot />
+    <footer class="my-6 text-sm text-center secondary-text">
+      <p>
+        Developed by <a href={links.personal.href} class="underline">{links.personal.label}</a>. Source code on{" "}
+        <a href={links.repo.href} class="underline">{links.repo.label}</a>.
+      </p>
+    </footer>
+	</body>
+</html>
