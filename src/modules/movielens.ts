@@ -1,4 +1,4 @@
-import { Micro } from "effect"
+import { Data, Effect } from "effect"
 
 const LOGS_EXPORT_COLUMNS = ["datetime", "login_id", "action_type", "log_json"] as const
 const RATINGS_EXPORT_COLUMNS = ["movie_id", "imdb_id", "tmdb_id", "rating", "average_rating", "title"] as const
@@ -61,18 +61,18 @@ const LOG_JSON_REQUIRED_FIELDS: Partial<
 	rating: { movieId: "number" }
 }
 
-export class CsvParseError extends Micro.TaggedError("CsvParseError")<{
+export class CsvParseError extends Data.TaggedError("CsvParseError")<{
 	readonly message: string
 	readonly cause?: unknown
 }> {}
 
-export class CsvHeaderValidationError extends Micro.TaggedError("CsvHeaderValidationError")<{
+export class CsvHeaderValidationError extends Data.TaggedError("CsvHeaderValidationError")<{
 	readonly message: string
 	readonly expected: readonly string[]
 	readonly received: string[]
 }> {}
 
-export class CsvRowValidationError extends Micro.TaggedError("CsvRowValidationError")<{
+export class CsvRowValidationError extends Data.TaggedError("CsvRowValidationError")<{
 	readonly message: string
 	readonly rowIndex: number
 	readonly cause?: unknown
@@ -82,11 +82,11 @@ export class CsvRowValidationError extends Micro.TaggedError("CsvRowValidationEr
  * Reads a Blob as text and splits it into trimmed, non-empty lines.
  */
 const blobToLines = (data: Blob) =>
-	Micro.tryPromise({
+	Effect.tryPromise({
 		try: () => data.text(),
 		catch: (cause) => new CsvParseError({ message: "Failed to read blob as text", cause })
 	}).pipe(
-		Micro.map((text) => text.split("\n").map((l) => l.trimEnd()).filter((l) => l.length > 0))
+		Effect.map((text) => text.split("\n").map((l) => l.trimEnd()).filter((l) => l.length > 0))
 	)
 
 /**
@@ -163,16 +163,16 @@ const validateHeader = (
 	lines: string[],
 	expected: readonly string[]
 ) =>
-	Micro.gen(function*() {
+	Effect.gen(function*() {
 		if (lines.length === 0) {
-			return yield* Micro.fail(new CsvParseError({ message: "CSV is empty" }))
+			return yield* Effect.fail(new CsvParseError({ message: "CSV is empty" }))
 		}
 		// note: some CSV exports may include a UTF-8 BOM, so we trim that from the first header field if present before validation
 		const headerFields = parseCsvLine(lines[0].replace(/^\uFEFF/, ""))
 		const matches = headerFields.length === expected.length &&
 			expected.every((col, i) => col === headerFields[i])
 		if (!matches) {
-			return yield* Micro.fail(
+			return yield* Effect.fail(
 				new CsvHeaderValidationError({
 					message: "CSV header does not match expected columns",
 					expected,
@@ -184,7 +184,7 @@ const validateHeader = (
 	})
 
 export const parseMovielensRatingsCsv = (data: Blob) =>
-	Micro.gen(function*() {
+	Effect.gen(function*() {
 		const lines = yield* blobToLines(data)
 		const dataLines = yield* validateHeader(lines, RATINGS_EXPORT_COLUMNS)
 
@@ -213,7 +213,7 @@ export const parseMovielensRatingsCsv = (data: Blob) =>
 	})
 
 export const parseMovielensLogsCsv = (data: Blob) =>
-	Micro.gen(function*() {
+	Effect.gen(function*() {
 		const lines = yield* blobToLines(data)
 		const dataLines = yield* validateHeader(lines, LOGS_EXPORT_COLUMNS)
 
@@ -232,8 +232,8 @@ export const parseMovielensLogsCsv = (data: Blob) =>
 			let jsonParseFailed = false
 
 			if (log_json_raw.length > 0) {
-				const parsed = yield* Micro.either(
-					Micro.try({
+				const parsed = yield* Effect.either(
+					Effect.try({
 						try: () => JSON.parse(log_json_raw) as unknown,
 						catch: (cause) => ({
 							code: "invalid_json",
@@ -321,7 +321,7 @@ export const parseMovielensLogsCsv = (data: Blob) =>
 	})
 
 export const parseMovielensTagsCsv = (data: Blob) =>
-	Micro.gen(function*() {
+	Effect.gen(function*() {
 		const lines = yield* blobToLines(data)
 		const dataLines = yield* validateHeader(lines, TAGS_EXPORT_COLUMNS)
 

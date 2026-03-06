@@ -5,7 +5,7 @@ import {
 	parseMovielensTagsCsv,
 	type ValidationError
 } from "@src/modules/movielens"
-import { Micro } from "effect"
+import { Cause, Effect, Exit, Option } from "effect"
 import { type Accessor, createEffect, createMemo, createSignal, onMount } from "solid-js"
 
 const UploadStatus = {
@@ -129,21 +129,16 @@ const parseErrorToMessage = (error: unknown) => {
 	return String(error)
 }
 
-const runMicroOrThrow = async <A, E>(micro: Micro.Micro<A, E>) => {
-	try {
-		return await Micro.runPromise(micro)
-	} catch (error) {
-		if (
-			typeof error === "object" &&
-			error !== null &&
-			"_tag" in error &&
-			error._tag === "Fail" &&
-			"error" in error
-		) {
-			throw error.error
-		}
-		throw error
+const runEffectOrThrow = async <A, E>(effect: Effect.Effect<A, E>) => {
+	const exit = await Effect.runPromiseExit(effect)
+	if (Exit.isSuccess(exit)) {
+		return exit.value
 	}
+	const failure = Cause.failureOption(exit.cause)
+	if (Option.isSome(failure)) {
+		throw failure.value
+	}
+	throw new Error(Cause.pretty(exit.cause))
 }
 
 const validationErrorsToIssues = (
@@ -440,7 +435,7 @@ export const useImportSessionStore = () => {
 		setIssues([])
 
 		try {
-			const parsed = await runMicroOrThrow(parseMovielensRatingsCsv(file))
+			const parsed = await runEffectOrThrow(parseMovielensRatingsCsv(file))
 			const nextRows: StagedRow[] = parsed.rows.map((row) => ({
 				id: `movie-${row.movie_id}`,
 				sourceMovieId: row.movie_id,
@@ -494,7 +489,7 @@ export const useImportSessionStore = () => {
 		setIssues((prev) => prev.filter((issue) => issue.source !== IssueSource.logs))
 
 		try {
-			const parsed = await runMicroOrThrow(parseMovielensLogsCsv(file))
+			const parsed = await runEffectOrThrow(parseMovielensLogsCsv(file))
 			const latestByMovieId = new Map<string, { dateTime: string }>()
 
 			for (const row of parsed.rows) {
@@ -558,7 +553,7 @@ export const useImportSessionStore = () => {
 		setIssues((prev) => prev.filter((issue) => issue.source !== IssueSource.tags))
 
 		try {
-			const parsed = await runMicroOrThrow(parseMovielensTagsCsv(file))
+			const parsed = await runEffectOrThrow(parseMovielensTagsCsv(file))
 			const tagsByMovieId = new Map<string, string[]>()
 
 			for (const row of parsed.rows) {
@@ -619,7 +614,7 @@ export const useImportSessionStore = () => {
 		}
 		try {
 			const letterboxdRows = toLetterboxdRows(stagedRows())
-			const blob = await runMicroOrThrow(toCsvBlobEffect(letterboxdRows))
+			const blob = await runEffectOrThrow(toCsvBlobEffect(letterboxdRows))
 			const url = URL.createObjectURL(blob)
 			const anchor = document.createElement("a")
 			anchor.href = url

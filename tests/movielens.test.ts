@@ -3,7 +3,7 @@ import { Effect } from "effect"
 
 import { FileSystem } from "@effect/platform"
 import { parseMovielensLogsCsv, parseMovielensRatingsCsv, parseMovielensTagsCsv } from "../src/modules/movielens"
-import { fromMicro, withNodeFileSystem } from "./helpers/effectTestUtils"
+import { withNodeFileSystem } from "./helpers/effectTestUtils"
 
 const ratingsExportFilename = "movielens-ratings.csv"
 const logsExportFilename = "movielens-logs.csv"
@@ -22,7 +22,7 @@ describe("movielens", () => {
 	it.effect("parses ratings fixture with expected row count and rowIndex offset", () =>
 		Effect.gen(function*() {
 			const blob = yield* fixtureBlob(ratingsExportFilename)
-			const result = yield* fromMicro(parseMovielensRatingsCsv(blob))
+			const result = yield* parseMovielensRatingsCsv(blob)
 
 			expect(result.rows).toHaveLength(30)
 			expect(result.errors).toHaveLength(0)
@@ -36,7 +36,7 @@ describe("movielens", () => {
 	it.effect("parses logs fixture and preserves action_type distribution", () =>
 		Effect.gen(function*() {
 			const blob = yield* fixtureBlob(logsExportFilename)
-			const result = yield* fromMicro(parseMovielensLogsCsv(blob))
+			const result = yield* parseMovielensLogsCsv(blob)
 
 			expect(result.rows).toHaveLength(120)
 			expect(result.errors).toHaveLength(0)
@@ -58,7 +58,7 @@ describe("movielens", () => {
 	it.effect("parses tags fixture with expected rows and repeated movie tags", () =>
 		Effect.gen(function*() {
 			const blob = yield* fixtureBlob(tagsExportFilename)
-			const result = yield* fromMicro(parseMovielensTagsCsv(blob))
+			const result = yield* parseMovielensTagsCsv(blob)
 
 			expect(result.rows).toHaveLength(30)
 			expect(result.errors).toHaveLength(0)
@@ -75,7 +75,7 @@ describe("movielens", () => {
 			lines[0] = "movie_id,imdb_id,tmdb_id,rating,title,average_rating"
 
 			const either = yield* Effect.either(
-				fromMicro(parseMovielensRatingsCsv(new Blob([lines.join("\n")], { type: "text/csv" })))
+				parseMovielensRatingsCsv(new Blob([lines.join("\n")], { type: "text/csv" }))
 			)
 
 			expect(either._tag).toBe("Left")
@@ -91,7 +91,7 @@ describe("movielens", () => {
 				"2020-10-29 00:17:08.0,XaGQezy,rating,\"{\"\"movieId\"\":27773\""
 			].join("\n")
 
-			const result = yield* fromMicro(parseMovielensLogsCsv(new Blob([csv], { type: "text/csv" })))
+			const result = yield* parseMovielensLogsCsv(new Blob([csv], { type: "text/csv" }))
 
 			expect(result.rows).toHaveLength(1)
 			expect(result.errors.map((error) => error.code)).toEqual(["invalid_json", "missing_field"])
@@ -105,7 +105,7 @@ describe("movielens", () => {
 				"2020-10-29 00:17:08.0,XaGQezy,rating,\"{\"\"movieId\"\":\"\"27773\"\",\"\"rating\"\":4.0}\""
 			].join("\n")
 
-			const result = yield* fromMicro(parseMovielensLogsCsv(new Blob([csv], { type: "text/csv" })))
+			const result = yield* parseMovielensLogsCsv(new Blob([csv], { type: "text/csv" }))
 
 			expect(result.rows).toHaveLength(1)
 			expect(result.errors).toHaveLength(1)

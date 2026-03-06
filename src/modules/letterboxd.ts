@@ -1,4 +1,4 @@
-import * as Micro from "effect/Micro"
+import { Data, Effect } from "effect"
 
 // LetterboxdURI	String (optional), matches a film or diary entry by its Letterboxd URI, example: https://boxd.it/29qU
 // Note: letterboxd.com URIs are also supported for backwards compatibility; this column can alternatively be titled url
@@ -51,18 +51,18 @@ type WithAtLeastOneIdentifier = {
 
 export type LetterboxdImportRow = WithAtLeastOneIdentifier
 
-export class BlobCreationError extends Micro.TaggedError("BlobCreationError")<{
+export class BlobCreationError extends Data.TaggedError("BlobCreationError")<{
 	readonly message: string
 	readonly cause?: Error | unknown
 }> {}
 
-export class LetterboxImportSchemaValidationError extends Micro.TaggedError("LetterboxImportSchemaValidationError")<{
+export class LetterboxImportSchemaValidationError extends Data.TaggedError("LetterboxImportSchemaValidationError")<{
 	readonly message: string
 	readonly cause?: Error | unknown
 }> {}
 
 export function toCsvBlobEffect(rows: LetterboxdImportRow[]) {
-	return Micro.gen(function*() {
+	return Effect.gen(function*() {
 		const blobParts = [LETTERBOXD_IMPORT_COLUMNS.join(",") + "\n"]
 		const partEffect = rows.map((row) => {
 			const rowFeatures = LETTERBOXD_IMPORT_COLUMNS.map((col) => {
@@ -80,17 +80,17 @@ export function toCsvBlobEffect(rows: LetterboxdImportRow[]) {
 			// validate that the row has at least one identifier column
 			const hasIdentifier = IDENTIFIER_COLUMNS.some((col) => row[col] !== undefined)
 			if (!hasIdentifier) {
-				return Micro.fail(
+				return Effect.fail(
 					new LetterboxImportSchemaValidationError({
 						message: `Row is missing required identifier column: ${JSON.stringify(row)}`
 					})
 				)
 			}
-			return Micro.succeed(rowFeatures.join(",") + "\n")
+			return Effect.succeed(rowFeatures.join(",") + "\n")
 		})
-		const resolvedParts = yield* Micro.all(partEffect)
+		const resolvedParts = yield* Effect.all(partEffect)
 		blobParts.concat(resolvedParts)
-		return yield* Micro.try({
+		return yield* Effect.try({
 			try: () => new Blob(blobParts, { type: "text/csv" }),
 			catch: (error) => new BlobCreationError({ message: "Failed to create letterboxd CSV blob", cause: error })
 		})
