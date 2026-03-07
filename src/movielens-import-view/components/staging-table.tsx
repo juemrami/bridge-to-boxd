@@ -1,5 +1,6 @@
 import { type Accessor, type Component, createMemo, createSignal, For, Show } from "solid-js"
 import { normalizeTags, parseTagsCsv, splitTags, type StagedRow, useImportSessionStore } from "../import-session-store"
+import { AddFilmModal } from "./add-film-modal"
 
 type TitleExternalIdType = "imdb" | "tmdb"
 const getTitleExternalLink = (idType: TitleExternalIdType, id: string) => {
@@ -279,7 +280,16 @@ export const StagedTable: Component = () => {
 					/>
 					<PressEnterHint />
 				</Show>
-
+				<button
+					class="basic-button mb-2 w-25 text-center"
+					onClick={() =>
+						sessionStore.addFilmModalState() ? sessionStore.hideAddFilmModal() : sessionStore.showAddFilmModal()}
+				>
+					{sessionStore.addFilmModalState() ? "Close" : "Add a film"}
+				</button>
+				<Show when={sessionStore.addFilmModalState()}>
+					<AddFilmModal />
+				</Show>
 				<div class="overflow-auto border border-gray-300 dark:border-gray-600 rounded-sm">
 					<table class="w-full">
 						<thead class="bg-gray-100 dark:bg-gray-700">

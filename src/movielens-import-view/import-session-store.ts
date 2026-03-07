@@ -225,6 +225,7 @@ const toLetterboxdRows = (rows: StagedRow[]): LetterboxdImportRow[] =>
 
 const persistedSessionStore = AtomRegistry.make()
 const userSessionState = Atom.make<ImportSessionState>(initialImportWorkflowState())
+const addFilmModalAtom = Atom.make(false)
 const localStorageLoadingStateAtom = Atom.make<"loading" | "loaded">("loading")
 const exportIssuesAtom = Atom.make((get) => buildExportIssues(get(userSessionState).stagedRows))
 const allIssuesAtom = Atom.make((get) => [...get(userSessionState).issues, ...get(exportIssuesAtom)])
@@ -379,6 +380,35 @@ const clearSession = () => {
 	if (typeof window !== "undefined") {
 		window.localStorage.removeItem(SESSION_STORAGE_KEY)
 	}
+}
+
+const addImdbFilmToRatings = (selectedResult: { id: string; primaryTitle: string; startYear?: number }) => {
+	const sourceMovieId = `manual-${selectedResult.id}-${Date.now()}`
+	persistedSessionStore.update(userSessionState, (session) => ({
+		...session,
+		stagedRows: [
+			...session.stagedRows,
+			{
+				id: sourceMovieId,
+				sourceMovieId,
+				LetterboxdURI: "",
+				tmdbID: "",
+				imdbID: selectedResult.id,
+				Title: selectedResult.startYear
+					? `${selectedResult.primaryTitle} (${selectedResult.startYear})`
+					: selectedResult.primaryTitle,
+				Directors: "",
+				Rating: "",
+				Rating10: "",
+				WatchedDate: "",
+				Rewatch: false,
+				Tags: "",
+				Review: ""
+			}
+		],
+		restoreMessage: ""
+	}))
+	persistedSessionStore.set(addFilmModalAtom, false)
 }
 
 const displayText = {
@@ -747,6 +777,10 @@ export const useImportSessionStore = () => {
 	}
 
 	return {
+		addFilmModalState: useAtomValue(addFilmModalAtom),
+		showAddFilmModal: () => persistedSessionStore.set(addFilmModalAtom, true),
+		hideAddFilmModal: () => persistedSessionStore.set(addFilmModalAtom, false),
+		addImdbFilmToRatings,
 		localStorageLoadingState: useAtomValue(localStorageLoadingStateAtom),
 		ratingsUpload,
 		logsUpload,
