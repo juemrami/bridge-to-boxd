@@ -225,7 +225,7 @@ const toLetterboxdRows = (rows: StagedRow[]): LetterboxdImportRow[] =>
 
 const persistedSessionStore = AtomRegistry.make()
 const userSessionState = Atom.make<ImportSessionState>(initialImportWorkflowState())
-
+const localStorageLoadingStateAtom = Atom.make<"loading" | "loaded">("loading")
 const exportIssuesAtom = Atom.make((get) => buildExportIssues(get(userSessionState).stagedRows))
 const allIssuesAtom = Atom.make((get) => [...get(userSessionState).issues, ...get(exportIssuesAtom)])
 const canUploadOptionalAtom = Atom.make((get) => get(userSessionState).ratingsUpload.status === UploadStatus.loaded)
@@ -711,6 +711,7 @@ const initClientLifecycle = () => {
 	persistedSessionStore.subscribe(userSessionState, (session) => {
 		persistSession(session)
 	})
+	persistedSessionStore.set(localStorageLoadingStateAtom, "loaded")
 }
 
 const useAtomValue = <A>(atom: Atom.Atom<A>): Accessor<A> => {
@@ -765,6 +766,7 @@ export const useImportSessionStore = () => {
 	}
 
 	return {
+		localStorageLoadingState: useAtomValue(localStorageLoadingStateAtom),
 		ratingsUpload,
 		logsUpload,
 		tagsUpload,

@@ -246,213 +246,236 @@ export const StagedTable: Component = () => {
 	return (
 		<section class="my-6">
 			<h2 class="text-2xl font-bold mb-1">{displayText.title}</h2>
-			<TableActions
-				canDownload={sessionStore.canDownload}
-				restoreMessage={sessionStore.restoreMessage}
-				onDownload={sessionStore.onDownload}
-				onClear={() => {
-					const confirmed = !sessionStore.canDownload() || window.confirm(displayText.clearConfirmation)
-					if (confirmed) {
-						sessionStore.clearSession()
+			<Show
+				when={sessionStore.localStorageLoadingState() === "loaded"}
+				fallback={<p class="text-center">Loading...</p>}
+			>
+				<Show
+					when={sessionStore.stagedRows().length > 0}
+					fallback={
+						<p class="text-center">
+							No data. Upload a{" "}
+							<a
+								href="https://movielens.org/profile/settings/import-export"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="external-link"
+							>
+								Movielens ratings export <code>.csv</code> file
+							</a>
+						</p>
 					}
-				}}
-			/>
-			<PressEnterHint />
-			<div class="overflow-auto border border-gray-300 dark:border-gray-600 rounded-sm">
-				<table class="w-full">
-					<thead class="bg-gray-100 dark:bg-gray-700">
-						<tr>
-							<For each={displayText.headerLabels}>
-								{(header) => {
-									const sortableColumn = sortableColumnsByHeader[header]
-									return (
-										<th class="px-3 py-2 text-left text-sm font-semibold">
+				>
+					<TableActions
+						canDownload={sessionStore.canDownload}
+						restoreMessage={sessionStore.restoreMessage}
+						onDownload={sessionStore.onDownload}
+						onClear={() => {
+							const confirmed = !sessionStore.canDownload() || window.confirm(displayText.clearConfirmation)
+							if (confirmed) {
+								sessionStore.clearSession()
+							}
+						}}
+					/>
+					<PressEnterHint />
+				</Show>
+
+				<div class="overflow-auto border border-gray-300 dark:border-gray-600 rounded-sm">
+					<table class="w-full">
+						<thead class="bg-gray-100 dark:bg-gray-700">
+							<tr>
+								<For each={displayText.headerLabels}>
+									{(header) => {
+										const sortableColumn = sortableColumnsByHeader[header]
+										return (
+											<th class="px-3 py-2 text-left text-sm font-semibold">
+												<Show
+													when={sortableColumn !== undefined}
+													fallback={<span>{header}</span>}
+												>
+													<button class="underline" type="button" onClick={() => toggleSort(sortableColumn!)}>
+														<span>{header}</span>
+														<SortIndicator column={sortableColumn!} />
+													</button>
+												</Show>
+											</th>
+										)
+									}}
+								</For>
+								<th class="px-3 py-2 text-left text-sm font-semibold">
+									<span class="sr-only">{displayText.deleteColumnSrOnly}</span>
+								</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+							<For each={sortedRows()}>
+								{(row) => (
+									<tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+										{/* Status */}
+										<td class="px-3 py-2 text-sm">
+											{sessionStore.getIssueCountForRow(row.id) > 0
+												? getIssueStatusMessage(sessionStore.getIssueCountForRow(row.id))
+												: displayText.rowStatusOk}
+										</td>
+										{/* Title */}
+										<td class="px-3 py-2 text-sm">
 											<Show
-												when={sortableColumn !== undefined}
-												fallback={<span>{header}</span>}
+												when={getRowTitleExternalLink(row)}
+												fallback={<span>{row.Title}</span>}
 											>
-												<button class="underline" type="button" onClick={() => toggleSort(sortableColumn!)}>
-													<span>{header}</span>
-													<SortIndicator column={sortableColumn!} />
-												</button>
+												{(href) => (
+													<a href={href()} target="_blank" rel="noopener noreferrer" class="external-link">
+														{row.Title}
+													</a>
+												)}
 											</Show>
-										</th>
-									)
-								}}
-							</For>
-							<th class="px-3 py-2 text-left text-sm font-semibold">
-								<span class="sr-only">{displayText.deleteColumnSrOnly}</span>
-							</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-						<For each={sortedRows()}>
-							{(row) => (
-								<tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
-									{/* Status */}
-									<td class="px-3 py-2 text-sm">
-										{sessionStore.getIssueCountForRow(row.id) > 0
-											? getIssueStatusMessage(sessionStore.getIssueCountForRow(row.id))
-											: displayText.rowStatusOk}
-									</td>
-									{/* Title */}
-									<td class="px-3 py-2 text-sm">
-										<Show
-											when={getRowTitleExternalLink(row)}
-											fallback={<span>{row.Title}</span>}
-										>
-											{(href) => (
-												<a href={href()} target="_blank" rel="noopener noreferrer" class="external-link">
-													{row.Title}
-												</a>
-											)}
-										</Show>
-										{
-											/* <button
+											{
+												/* <button
                       class="ml-2 px-2 py-1 text-xs border rounded bg-white text-gray-700"
                       disabled
                       title="Edit movie (TODO)"
                     >
                       Edit
                     </button> */
-										}
-									</td>
-									{/* Title ID */}
-									<td class="px-3 py-2">
-										<span class="w-28 inline-block px-2 py-1 text-sm font-mono">
-											{sessionStore.getInputValue(row, "imdbID")}
-										</span>
-									</td>
-									{/* Rating */}
-									<td class="px-3 py-2">
-										<input
-											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={sessionStore.getInputValue(row, "Rating")}
-											onInput={(event) => sessionStore.setDraft(row.id, "Rating", event.currentTarget.value)}
-											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Rating")}
-											onBlur={() => sessionStore.handleDraftBlur(row.id, "Rating")}
-											placeholder={displayText.inputPlaceholders.rating}
-											step={0.5}
-											min={0.5}
-											max={5}
-											type="number"
-										/>
-									</td>
-									{/* Watched Date */}
-									<td class="px-3 py-2">
-										<input
-											class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={sessionStore.getInputValue(row, "WatchedDate")}
-											onInput={(event) => sessionStore.setDraft(row.id, "WatchedDate", event.currentTarget.value)}
-											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "WatchedDate")}
-											onBlur={() => sessionStore.handleDraftBlur(row.id, "WatchedDate")}
-											placeholder={displayText.inputPlaceholders.watchedDate}
-											type="date"
-										/>
-									</td>
-									{/* Rewatch checkbox */}
-									<td class="text-center">
-										<input
-											class="self-center border"
-											type="checkbox"
-											checked={row.Rewatch}
-											onChange={(event) => sessionStore.onToggleRewatch(row.id, event.currentTarget.checked)}
-										/>
-									</td>
-									{/* Tags */}
-									<td class="px-3 py-2 w-min">
-										<div class="flex flex-col">
-											<div class="flex justify-between items-start">
-												{/* Chips */}
-												<div class="flex flex-wrap max-w-60 gap-1 min-h-7">
-													<Show
-														when={getTagsForRow(row).length > 0}
-														fallback={<span class="text-xs secondary-text">{displayText.tagEditor.emptyState}</span>}
+											}
+										</td>
+										{/* Title ID */}
+										<td class="px-3 py-2">
+											<span class="w-28 inline-block px-2 py-1 text-sm font-mono">
+												{sessionStore.getInputValue(row, "imdbID")}
+											</span>
+										</td>
+										{/* Rating */}
+										<td class="px-3 py-2">
+											<input
+												class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
+												value={sessionStore.getInputValue(row, "Rating")}
+												onInput={(event) => sessionStore.setDraft(row.id, "Rating", event.currentTarget.value)}
+												onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Rating")}
+												onBlur={() => sessionStore.handleDraftBlur(row.id, "Rating")}
+												placeholder={displayText.inputPlaceholders.rating}
+												step={0.5}
+												min={0.5}
+												max={5}
+												type="number"
+											/>
+										</td>
+										{/* Watched Date */}
+										<td class="px-3 py-2">
+											<input
+												class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
+												value={sessionStore.getInputValue(row, "WatchedDate")}
+												onInput={(event) => sessionStore.setDraft(row.id, "WatchedDate", event.currentTarget.value)}
+												onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "WatchedDate")}
+												onBlur={() => sessionStore.handleDraftBlur(row.id, "WatchedDate")}
+												placeholder={displayText.inputPlaceholders.watchedDate}
+												type="date"
+											/>
+										</td>
+										{/* Rewatch checkbox */}
+										<td class="text-center">
+											<input
+												class="self-center border"
+												type="checkbox"
+												checked={row.Rewatch}
+												onChange={(event) => sessionStore.onToggleRewatch(row.id, event.currentTarget.checked)}
+											/>
+										</td>
+										{/* Tags */}
+										<td class="px-3 py-2 w-min">
+											<div class="flex flex-col">
+												<div class="flex justify-between items-start">
+													{/* Chips */}
+													<div class="flex flex-wrap max-w-60 gap-1 min-h-7">
+														<Show
+															when={getTagsForRow(row).length > 0}
+															fallback={<span class="text-xs secondary-text">{displayText.tagEditor.emptyState}</span>}
+														>
+															<For each={getTagsForRow(row)}>
+																{(tag) => (
+																	<span class="inline-flex items-center h-min gap-1 px-1.25 py-px text-xs border border-gray-300 rounded">
+																		<span>{tag}</span>
+																		<button
+																			hidden={!isTagEditorOpen(row.id)}
+																			type="button"
+																			class="button-behavior text-xs font-medium text-delete-red border-l border-l-gray-300 pl-1"
+																			title={`${displayText.tagEditor.removePrefix} ${tag}`}
+																			onClick={() => removeTagFromRow(row, tag)}
+																		>
+																			×
+																		</button>
+																	</span>
+																)}
+															</For>
+														</Show>
+													</div>
+													{/* Edit Chips toggle */}
+													<button
+														type="button"
+														class="button-behavior h-min inline-flex items-center justify-center"
+														title={getTagEditorToggleLabel(row.id)}
+														onClick={() => setTagEditorState(row.id, !isTagEditorOpen(row.id))}
 													>
-														<For each={getTagsForRow(row)}>
-															{(tag) => (
-																<span class="inline-flex items-center h-min gap-1 px-1.25 py-px text-xs border border-gray-300 rounded">
-																	<span>{tag}</span>
-																	<button
-																		hidden={!isTagEditorOpen(row.id)}
-																		type="button"
-																		class="button-behavior text-xs font-medium text-delete-red border-l border-l-gray-300 pl-1"
-																		title={`${displayText.tagEditor.removePrefix} ${tag}`}
-																		onClick={() => removeTagFromRow(row, tag)}
-																	>
-																		×
-																	</button>
-																</span>
-															)}
-														</For>
-													</Show>
+														<Show when={isTagEditorOpen(row.id)} fallback={<EditIcon />}>
+															<CheckIcon />
+														</Show>
+														<span class="sr-only">{getTagEditorToggleLabel(row.id)}</span>
+													</button>
 												</div>
-												{/* Edit Chips toggle */}
-												<button
-													type="button"
-													class="button-behavior h-min inline-flex items-center justify-center"
-													title={getTagEditorToggleLabel(row.id)}
-													onClick={() => setTagEditorState(row.id, !isTagEditorOpen(row.id))}
-												>
-													<Show when={isTagEditorOpen(row.id)} fallback={<EditIcon />}>
-														<CheckIcon />
-													</Show>
-													<span class="sr-only">{getTagEditorToggleLabel(row.id)}</span>
-												</button>
+												<Show when={isTagEditorOpen(row.id)}>
+													<input
+														class="w-[50%] px-2 py-1 text-xs border border-gray-300 rounded mt-1"
+														placeholder={displayText.tagEditor.addPlaceholder}
+														value={getPendingTag(row.id)}
+														onInput={(event) => setPendingTag(row.id, event.currentTarget.value)}
+														onKeyDown={(event) => {
+															if (event.key === "Enter") {
+																event.preventDefault()
+																const inputElement = event.currentTarget
+																addTagToRow(row)
+																requestAnimationFrame(() => inputElement.focus())
+															}
+														}}
+													/>
+												</Show>
 											</div>
-											<Show when={isTagEditorOpen(row.id)}>
-												<input
-													class="w-[50%] px-2 py-1 text-xs border border-gray-300 rounded mt-1"
-													placeholder={displayText.tagEditor.addPlaceholder}
-													value={getPendingTag(row.id)}
-													onInput={(event) => setPendingTag(row.id, event.currentTarget.value)}
-													onKeyDown={(event) => {
-														if (event.key === "Enter") {
-															event.preventDefault()
-															const inputElement = event.currentTarget
-															addTagToRow(row)
-															requestAnimationFrame(() => inputElement.focus())
-														}
-													}}
-												/>
-											</Show>
-										</div>
-									</td>
-									{/* Review */}
-									<td class="px-3 py-2">
-										<textarea
-											class="px-2 py-1 min-h-6 text-sm border border-gray-300 rounded"
-											placeholder={displayText.inputPlaceholders.review}
-											value={sessionStore.getInputValue(row, "Review")}
-											title={sessionStore.getInputValue(row, "Review")}
-											onInput={(event) => sessionStore.setDraft(row.id, "Review", event.currentTarget.value)}
-											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Review")}
-											onBlur={() => sessionStore.handleDraftBlur(row.id, "Review")}
-										/>
-									</td>
-									{/* Delete button */}
-									<td class="px-3 py-2 text-sm text-center">
-										<button
-											class="button-behavior px-2 py-1 text-delete-red"
-											type="button"
-											aria-label={displayText.deleteButtonHint}
-											title={displayText.deleteButtonHint}
-											onClick={() => {
-												const confirmed = window.confirm(displayText.deleteConfirmation)
-												if (confirmed) {
-													sessionStore.deleteRow(row.id)
-												}
-											}}
-										>
-											<TrashIcon />
-										</button>
-									</td>
-								</tr>
-							)}
-						</For>
-					</tbody>
-				</table>
-			</div>
+										</td>
+										{/* Review */}
+										<td class="px-3 py-2">
+											<textarea
+												class="px-2 py-1 min-h-6 text-sm border border-gray-300 rounded"
+												placeholder={displayText.inputPlaceholders.review}
+												value={sessionStore.getInputValue(row, "Review")}
+												title={sessionStore.getInputValue(row, "Review")}
+												onInput={(event) => sessionStore.setDraft(row.id, "Review", event.currentTarget.value)}
+												onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Review")}
+												onBlur={() => sessionStore.handleDraftBlur(row.id, "Review")}
+											/>
+										</td>
+										{/* Delete button */}
+										<td class="px-3 py-2 text-sm text-center">
+											<button
+												class="button-behavior px-2 py-1 text-delete-red"
+												type="button"
+												aria-label={displayText.deleteButtonHint}
+												title={displayText.deleteButtonHint}
+												onClick={() => {
+													const confirmed = window.confirm(displayText.deleteConfirmation)
+													if (confirmed) {
+														sessionStore.deleteRow(row.id)
+													}
+												}}
+											>
+												<TrashIcon />
+											</button>
+										</td>
+									</tr>
+								)}
+							</For>
+						</tbody>
+					</table>
+				</div>
+			</Show>
 		</section>
 	)
 }
