@@ -1,8 +1,9 @@
 import type { Component } from "solid-js"
 import { For, Show } from "solid-js"
-import type { IssuesPanelProps } from "../import-session-store"
+import { useImportSessionStore } from "../import-session-store"
 
-export const IssuesPanel: Component<IssuesPanelProps> = (props) => {
+export const IssuesPanel: Component = () => {
+	const sessionStore = useImportSessionStore()
 	const displayText = {
 		title: "Issues",
 		onEmpty: "No issues."
@@ -10,15 +11,15 @@ export const IssuesPanel: Component<IssuesPanelProps> = (props) => {
 	const formatIssueRowLabel = (rowIndex: number) => ` row ${rowIndex}`
 	const formatIssueFieldLabel = (field: string) => ` (${field})`
 	return (
-		<Show when={props.allIssues().length > 0}>
+		<Show when={sessionStore.allIssues().length > 0}>
 			<section class="my-6">
 				<h2 class="text-2xl font-bold mb-4">{displayText.title}</h2>
 				<Show
-					when={props.allIssues().length > 0}
+					when={sessionStore.allIssues().length > 0}
 					fallback={<p>{displayText.onEmpty}</p>}
 				>
 					<ul class="list-disc list-inside space-y-1">
-						<For each={props.allIssues()}>
+						<For each={sessionStore.allIssues()}>
 							{(issue) => (
 								<li class="text-sm">
 									<strong>{issue.severity.toUpperCase()}</strong> [{issue.source}]

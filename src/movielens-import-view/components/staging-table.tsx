@@ -1,5 +1,5 @@
 import { type Accessor, type Component, createMemo, createSignal, For, Show } from "solid-js"
-import { normalizeTags, parseTagsCsv, splitTags, type StagedRow, type StagedTableProps } from "../import-session-store"
+import { normalizeTags, parseTagsCsv, splitTags, type StagedRow, useImportSessionStore } from "../import-session-store"
 
 type TitleExternalIdType = "imdb" | "tmdb"
 const getTitleExternalLink = (idType: TitleExternalIdType, id: string) => {
@@ -48,7 +48,8 @@ const TableActions: Component<TableActionsProps> = (props) => {
 	)
 }
 
-export const StagedTable: Component<StagedTableProps> = (props) => {
+export const StagedTable: Component = () => {
+	const sessionStore = useImportSessionStore()
 	const SortColumn = {
 		name: "name",
 		watchedDate: "watchedDate",
@@ -176,7 +177,7 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 	}
 
 	const sortedRows = createMemo(() => {
-		const rows = [...props.stagedRows()]
+		const rows = [...sessionStore.stagedRows()]
 		rows.sort((left, right) => {
 			for (const column of sortPriority()) {
 				const direction = sortDirections()[column]
@@ -208,12 +209,13 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 		}))
 	}
 	const getIssueStatusMessage = (count: number) => `${count} issue(s)`
-	const getRowTitleExternalLink = (row: StagedRow) => getTitleExternalLink("imdb", props.getInputValue(row, "imdbID"))
+	const getRowTitleExternalLink = (row: StagedRow) =>
+		getTitleExternalLink("imdb", sessionStore.getInputValue(row, "imdbID"))
 	const isTagEditorOpen = (rowId: string) => tagEditorByRowId()[rowId] === true
 	const setTagEditorState = (rowId: string, open: boolean) => {
 		setTagEditorByRowId((previous) => ({ ...previous, [rowId]: open }))
 	}
-	const getTagsForRow = (row: StagedRow) => parseTagsCsv(props.getInputValue(row, "Tags"))
+	const getTagsForRow = (row: StagedRow) => parseTagsCsv(sessionStore.getInputValue(row, "Tags"))
 	const getPendingTag = (rowId: string) => newTagByRowId()[rowId] ?? ""
 	const getTagEditorToggleLabel = (rowId: string) =>
 		isTagEditorOpen(rowId) ? displayText.tagEditor.stopEditingTitle : displayText.tagEditor.editTitle
@@ -226,11 +228,11 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 		if (nextTags.length === 0) {
 			return
 		}
-		props.onAddRowTags(row.id, nextTags)
+		sessionStore.onAddRowTags(row.id, nextTags)
 		setPendingTag(row.id, "")
 	}
 	const removeTagFromRow = (row: StagedRow, tagToRemove: string) => {
-		props.onRemoveRowTag(row.id, tagToRemove)
+		sessionStore.onRemoveRowTag(row.id, tagToRemove)
 	}
 	const PressEnterHint = () => (
 		<p class="text-sm mb-2 primary-text">
@@ -245,13 +247,13 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 		<section class="my-6">
 			<h2 class="text-2xl font-bold mb-1">{displayText.title}</h2>
 			<TableActions
-				canDownload={props.canDownload}
-				restoreMessage={props.restoreMessage}
-				onDownload={props.onDownload}
+				canDownload={sessionStore.canDownload}
+				restoreMessage={sessionStore.restoreMessage}
+				onDownload={sessionStore.onDownload}
 				onClear={() => {
-					const confirmed = !props.canDownload() || window.confirm(displayText.clearConfirmation)
+					const confirmed = !sessionStore.canDownload() || window.confirm(displayText.clearConfirmation)
 					if (confirmed) {
-						props.onClear()
+						sessionStore.clearSession()
 					}
 				}}
 			/>
@@ -289,8 +291,8 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 								<tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
 									{/* Status */}
 									<td class="px-3 py-2 text-sm">
-										{props.getIssueCountForRow(row.id) > 0
-											? getIssueStatusMessage(props.getIssueCountForRow(row.id))
+										{sessionStore.getIssueCountForRow(row.id) > 0
+											? getIssueStatusMessage(sessionStore.getIssueCountForRow(row.id))
 											: displayText.rowStatusOk}
 									</td>
 									{/* Title */}
@@ -318,17 +320,17 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 									{/* Title ID */}
 									<td class="px-3 py-2">
 										<span class="w-28 inline-block px-2 py-1 text-sm font-mono">
-											{props.getInputValue(row, "imdbID")}
+											{sessionStore.getInputValue(row, "imdbID")}
 										</span>
 									</td>
 									{/* Rating */}
 									<td class="px-3 py-2">
 										<input
 											class="w-16 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={props.getInputValue(row, "Rating")}
-											onInput={(event) => props.setDraftValue(row.id, "Rating", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Rating")}
-											onBlur={() => props.handleDraftBlur(row.id, "Rating")}
+											value={sessionStore.getInputValue(row, "Rating")}
+											onInput={(event) => sessionStore.setDraft(row.id, "Rating", event.currentTarget.value)}
+											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Rating")}
+											onBlur={() => sessionStore.handleDraftBlur(row.id, "Rating")}
 											placeholder={displayText.inputPlaceholders.rating}
 											step={0.5}
 											min={0.5}
@@ -340,10 +342,10 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 									<td class="px-3 py-2">
 										<input
 											class="w-32 px-2 py-1 text-sm border border-gray-300 rounded"
-											value={props.getInputValue(row, "WatchedDate")}
-											onInput={(event) => props.setDraftValue(row.id, "WatchedDate", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "WatchedDate")}
-											onBlur={() => props.handleDraftBlur(row.id, "WatchedDate")}
+											value={sessionStore.getInputValue(row, "WatchedDate")}
+											onInput={(event) => sessionStore.setDraft(row.id, "WatchedDate", event.currentTarget.value)}
+											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "WatchedDate")}
+											onBlur={() => sessionStore.handleDraftBlur(row.id, "WatchedDate")}
 											placeholder={displayText.inputPlaceholders.watchedDate}
 											type="date"
 										/>
@@ -354,7 +356,7 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 											class="self-center border"
 											type="checkbox"
 											checked={row.Rewatch}
-											onChange={(event) => props.onToggleRewatch(row.id, event.currentTarget.checked)}
+											onChange={(event) => sessionStore.onToggleRewatch(row.id, event.currentTarget.checked)}
 										/>
 									</td>
 									{/* Tags */}
@@ -421,11 +423,11 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 										<textarea
 											class="px-2 py-1 min-h-6 text-sm border border-gray-300 rounded"
 											placeholder={displayText.inputPlaceholders.review}
-											value={props.getInputValue(row, "Review")}
-											title={props.getInputValue(row, "Review")}
-											onInput={(event) => props.setDraftValue(row.id, "Review", event.currentTarget.value)}
-											onKeyDown={(event) => props.handleDraftKeyDown(event, row, "Review")}
-											onBlur={() => props.handleDraftBlur(row.id, "Review")}
+											value={sessionStore.getInputValue(row, "Review")}
+											title={sessionStore.getInputValue(row, "Review")}
+											onInput={(event) => sessionStore.setDraft(row.id, "Review", event.currentTarget.value)}
+											onKeyDown={(event) => sessionStore.handleDraftKeyDown(event, row, "Review")}
+											onBlur={() => sessionStore.handleDraftBlur(row.id, "Review")}
 										/>
 									</td>
 									{/* Delete button */}
@@ -438,7 +440,7 @@ export const StagedTable: Component<StagedTableProps> = (props) => {
 											onClick={() => {
 												const confirmed = window.confirm(displayText.deleteConfirmation)
 												if (confirmed) {
-													props.onDeleteRow(row)
+													sessionStore.deleteRow(row.id)
 												}
 											}}
 										>

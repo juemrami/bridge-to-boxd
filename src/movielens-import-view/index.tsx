@@ -2,7 +2,6 @@ import { type Component, For } from "solid-js"
 import { IssuesPanel } from "./components/issues-panel"
 import { StagedTable } from "./components/staging-table"
 import { UploadPanel } from "./components/upload-panel"
-import { useImportSessionStore } from "./import-session-store"
 
 const App: Component = () => {
 	const displayText = {
@@ -17,8 +16,6 @@ const App: Component = () => {
 		]
 	} as const
 
-	const sessionStore = useImportSessionStore()
-
 	return (
 		<main class="mx-auto p-4 max-w-6xl">
 			<header class="mb-3">
@@ -32,37 +29,11 @@ const App: Component = () => {
 				</div>
 			</header>
 
-			<UploadPanel
-				ratingsUpload={sessionStore.ratingsUpload}
-				logsUpload={sessionStore.logsUpload}
-				tagsUpload={sessionStore.tagsUpload}
-				canUploadOptional={sessionStore.canUploadOptional}
-				stagedRows={sessionStore.stagedRows}
-				allIssues={sessionStore.allIssues}
-				renderUploadMeta={sessionStore.renderUploadMeta}
-				onRatingsUpload={sessionStore.onRatingsUpload}
-				onLogsUpload={sessionStore.onLogsUpload}
-				onTagsUpload={sessionStore.onTagsUpload}
-			/>
+			<UploadPanel />
 
-			<IssuesPanel allIssues={sessionStore.allIssues} />
+			<IssuesPanel />
 
-			<StagedTable
-				stagedRows={sessionStore.stagedRows}
-				getIssueCountForRow={sessionStore.getIssueCountForRow}
-				canDownload={sessionStore.canDownload}
-				restoreMessage={sessionStore.restoreMessage}
-				getInputValue={sessionStore.getInputValue}
-				setDraftValue={sessionStore.setDraftValue}
-				handleDraftKeyDown={sessionStore.handleDraftKeyDown}
-				handleDraftBlur={sessionStore.handleDraftBlur}
-				onAddRowTags={sessionStore.onAddRowTags}
-				onRemoveRowTag={sessionStore.onRemoveRowTag}
-				onToggleRewatch={sessionStore.onToggleRewatch}
-				onDeleteRow={sessionStore.onDeleteRow}
-				onDownload={sessionStore.onDownload}
-				onClear={sessionStore.onClear}
-			/>
+			<StagedTable />
 		</main>
 	)
 }

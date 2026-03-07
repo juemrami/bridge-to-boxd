@@ -1,7 +1,8 @@
 import type { Component, JSX } from "solid-js"
-import { type UploadPanelProps } from "../import-session-store"
+import { useImportSessionStore } from "../import-session-store"
 
-export const UploadPanel: Component<UploadPanelProps> = (props) => {
+export const UploadPanel: Component = () => {
+	const sessionStore = useImportSessionStore()
 	const displayText = {
 		title: "Uploads",
 		ratingsLabel: "Ratings CSV (required)",
@@ -48,37 +49,37 @@ export const UploadPanel: Component<UploadPanelProps> = (props) => {
 					</p>
 					<FileUploadInput
 						inputId="ratings-file"
-						onUpload={props.onRatingsUpload}
+						onUpload={sessionStore.onRatingsUpload}
 					/>
-					<p class="text-sm secondary-text mt-1">{props.renderUploadMeta(props.ratingsUpload())}</p>
+					<p class="text-sm secondary-text mt-1">{sessionStore.renderUploadMeta(sessionStore.ratingsUpload())}</p>
 				</div>
 
-				<div id="logs-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
+				<div id="logs-upload" class={`${sessionStore.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
 						{displayText.logsLabel}
 					</p>
 					<FileUploadInput
 						inputId="logs-file"
-						onUpload={props.onLogsUpload}
-						disabled={!props.canUploadOptional()}
+						onUpload={sessionStore.onLogsUpload}
+						disabled={!sessionStore.canUploadOptional()}
 					/>
-					<p class="text-sm secondary-text mt-1">{props.renderUploadMeta(props.logsUpload())}</p>
+					<p class="text-sm secondary-text mt-1">{sessionStore.renderUploadMeta(sessionStore.logsUpload())}</p>
 				</div>
 
-				<div id="tags-upload" class={`${props.canUploadOptional() ? "" : "opacity-50"}`}>
+				<div id="tags-upload" class={`${sessionStore.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
 						{displayText.tagsLabel}
 					</p>
 					<FileUploadInput
 						inputId="tags-file"
-						onUpload={props.onTagsUpload}
-						disabled={!props.canUploadOptional()}
+						onUpload={sessionStore.onTagsUpload}
+						disabled={!sessionStore.canUploadOptional()}
 					/>
-					<p class="text-sm secondary-text mt-1">{props.renderUploadMeta(props.tagsUpload())}</p>
+					<p class="text-sm secondary-text mt-1">{sessionStore.renderUploadMeta(sessionStore.tagsUpload())}</p>
 				</div>
 			</div>
 			<p id="upload-summary" class="text-sm">
-				{formatUploadSummaryText(props.stagedRows().length, props.allIssues().length)}
+				{formatUploadSummaryText(sessionStore.stagedRows().length, sessionStore.allIssues().length)}
 			</p>
 		</section>
 	)
