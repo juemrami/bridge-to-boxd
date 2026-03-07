@@ -31,7 +31,7 @@ const TableActions: Component<TableActionsProps> = (props) => {
 	return (
 		<div class="flex gap-2 items-center flex-wrap mb-1">
 			<button
-				class="green-button"
+				class="green-button disabled:opacity-50"
 				type="button"
 				onClick={props.onDownload}
 				disabled={!props.canDownload()}
