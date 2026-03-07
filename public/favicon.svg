@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" role="img" aria-label="Bridge to Letterboxd favicon">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="20%" stop-color="#FF9900"/>
+      <stop offset="50%" stop-color="#00E054"/>
+      <stop offset="75%" stop-color="#40BCF4"/>
+    </linearGradient>
+  </defs>
+  <rect rx="10" ry="10" width="64" height="64" fill="url(#g)"/>
+  <g>
+    <text x="32" y="46" text-anchor="middle" font-family="Inter, Roboto, Arial, sans-serif" font-weight="700" font-size="42" fill="white">🎬</text>
+  </g>
+
+  <!-- subtle shadow -->
+  <ellipse transform="translate(1,4)" cx="32" cy="54" rx="21" ry="3" fill="rgba(0,0,0,0.08)"/>
+</svg>
