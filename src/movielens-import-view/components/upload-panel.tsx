@@ -6,9 +6,18 @@ export const UploadPanel: Component = () => {
 	const sessionStore = useImportSessionStore()
 	const displayText = {
 		title: "Uploads",
-		ratings: { label: "Ratings CSV (required)" },
-		logs: { label: "Activity Logs CSV (optional)" },
-		tags: { label: "Tags CSV (optional)" },
+		ratings: {
+			label: "Ratings CSV (required)",
+			description: "Contains your logged films and your latest rating for each."
+		},
+		logs: {
+			label: "Activity Logs CSV (optional)",
+			description: "Contains 'watched date' information for your rated films."
+		},
+		tags: {
+			label: "Tags CSV (optional)",
+			description: "Contains your declared tags for each film."
+		},
 		chooseFile: "Upload a file"
 	} as const
 	const formatUploadSummaryText = (rows: number, issues: number) => (
@@ -17,7 +26,7 @@ export const UploadPanel: Component = () => {
 			{`${rows} imported films • ${issues} issues`}
 		</>
 	)
-	const formatUploadText = (state: UploadState) => {
+	const formatUploadText = (state: UploadState, isTags: boolean = false) => {
 		const fileName = state.fileName ?? "no file"
 		if (state.status === UploadStatus.idle) {
 			return <>Not uploaded</>
@@ -32,7 +41,8 @@ export const UploadPanel: Component = () => {
 		if (state.status === UploadStatus.loaded) {
 			return (
 				<>
-					<span class="whitespace-nowrap primary-text">{fileName}</span>: parsed {state.rows ?? 0} rows
+					<span class="whitespace-nowrap primary-text">{fileName}</span>: parsed {state.rows ?? 0}{" "}
+					{isTags ? "tags" : "rows"}
 				</>
 			)
 		}
@@ -77,7 +87,8 @@ export const UploadPanel: Component = () => {
 			<div id="upload-panel" class="grid grid-cols-3 gap-3 mb-2">
 				<div id="ratings-upload">
 					<p class="font-semibold mb-1">
-						{displayText.ratings.label}
+						{displayText.ratings.label}{" "}
+						<span class="cursor-pointer align-super" title={displayText.ratings.description}>🛈</span>
 					</p>
 					<FileUploadInput
 						inputId="ratings-file"
@@ -88,7 +99,8 @@ export const UploadPanel: Component = () => {
 
 				<div id="logs-upload" class={`${sessionStore.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
-						{displayText.logs.label}
+						{displayText.logs.label}{" "}
+						<span class="cursor-pointer align-super" title={displayText.logs.description}>🛈</span>
 					</p>
 					<FileUploadInput
 						inputId="logs-file"
@@ -100,14 +112,15 @@ export const UploadPanel: Component = () => {
 
 				<div id="tags-upload" class={`${sessionStore.canUploadOptional() ? "" : "opacity-50"}`}>
 					<p class="font-semibold mb-1">
-						{displayText.tags.label}
+						{displayText.tags.label}{" "}
+						<span class="cursor-pointer align-super" title={displayText.tags.description}>🛈</span>
 					</p>
 					<FileUploadInput
 						inputId="tags-file"
 						onUpload={sessionStore.onTagsUpload}
 						disabled={!sessionStore.canUploadOptional()}
 					/>
-					<p class="text-sm secondary-text mt-1">{formatUploadText(sessionStore.tagsUpload())}</p>
+					<p class="text-sm secondary-text mt-1">{formatUploadText(sessionStore.tagsUpload(), true)}</p>
 				</div>
 			</div>
 			<p id="upload-summary" class="text-sm">

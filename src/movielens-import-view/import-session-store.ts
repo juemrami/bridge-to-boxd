@@ -476,6 +476,7 @@ const onLogsUpload = async (event: Event) => {
 		const parsed = await runEffectOrThrow(parseMovielensLogsCsv(file))
 		const latestByMovieId = new Map<string, { dateTime: string }>()
 
+		let validRows = 0
 		for (const row of parsed.rows) {
 			if (row.action_type !== "rating") {
 				continue
@@ -487,6 +488,7 @@ const onLogsUpload = async (event: Event) => {
 			const current = latestByMovieId.get(movieId)
 			if (!current || row.datetime > current.dateTime) {
 				latestByMovieId.set(movieId, { dateTime: row.datetime })
+				validRows++
 			}
 		}
 
@@ -506,7 +508,7 @@ const onLogsUpload = async (event: Event) => {
 			logsUpload: {
 				status: UploadStatus.loaded,
 				fileName: file.name,
-				rows: parsed.rows.length
+				rows: validRows
 			}
 		} satisfies ImportSessionState))
 	} catch (error) {
