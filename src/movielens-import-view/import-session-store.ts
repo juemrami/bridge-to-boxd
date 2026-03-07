@@ -9,7 +9,7 @@ import { Cause, Effect, Exit, Option } from "effect"
 import { Atom, AtomRegistry } from "effect/unstable/reactivity"
 import { type Accessor, createSignal, onCleanup, onMount } from "solid-js"
 
-const UploadStatus = {
+export const UploadStatus = {
 	idle: "idle",
 	parsing: "parsing",
 	loaded: "loaded",
@@ -38,7 +38,7 @@ export type UploadState = {
 	status: UploadStatus
 	fileName?: string
 	rows?: number
-	message?: string
+	errMessage?: string
 }
 
 export type UiIssue = {
@@ -255,7 +255,7 @@ const updateRowField = <K extends keyof StagedRow>(rowId: string, key: K, value:
 	persistedSessionStore.update(userSessionState, (session) => ({
 		...session,
 		stagedRows: session.stagedRows.map((row) => (row.id === rowId ? { ...row, [key]: value } : row))
-	}))
+	} satisfies ImportSessionState))
 }
 
 const setDraft = (rowId: string, field: EditableTextField, value: string) => {
@@ -263,7 +263,7 @@ const setDraft = (rowId: string, field: EditableTextField, value: string) => {
 	persistedSessionStore.update(userSessionState, (session) => ({
 		...session,
 		draftEdits: { ...session.draftEdits, [key]: value }
-	}))
+	} satisfies ImportSessionState))
 }
 
 const clearDraft = (rowId: string, field: EditableTextField) => {
@@ -276,7 +276,7 @@ const clearDraft = (rowId: string, field: EditableTextField) => {
 		return {
 			...session,
 			draftEdits: nextDrafts
-		}
+		} satisfies ImportSessionState
 	})
 }
 
@@ -324,7 +324,7 @@ const commitDraft = (rowId: string, field: EditableTextField) => {
 			...session,
 			stagedRows: nextStagedRows,
 			draftEdits: nextDrafts
-		}
+		} satisfies ImportSessionState
 	})
 }
 
@@ -338,7 +338,7 @@ const addRowTags = (rowId: string, tags: string[]) => {
 				row
 			) => (row.id === rowId ? { ...row, Tags: mergeTagCsv(row.Tags, tags) } : row)),
 			draftEdits: nextDrafts
-		}
+		} satisfies ImportSessionState
 	})
 }
 
@@ -359,7 +359,7 @@ const removeRowTag = (rowId: string, tagToRemove: string) => {
 				}
 			}),
 			draftEdits: nextDrafts
-		}
+		} satisfies ImportSessionState
 	})
 }
 
@@ -370,7 +370,7 @@ const deleteRow = (rowId: string) => {
 			...session,
 			stagedRows: session.stagedRows.filter((row) => row.id !== rowId),
 			draftEdits: Object.fromEntries(Object.entries(session.draftEdits).filter(([key]) => !key.startsWith(prefix)))
-		}
+		} satisfies ImportSessionState
 	})
 }
 
@@ -384,8 +384,6 @@ const clearSession = () => {
 const displayText = {
 	confirmOverwrite: "Importing a new ratings file will overwrite current staged data. Continue?"
 } as const
-
-const formatUploadMetaLoaded = (fileName: string, rows: number) => `${fileName}: loaded ${rows} rows`
 
 const onRatingsUpload = async (event: Event) => {
 	const input = event.currentTarget as HTMLInputElement
@@ -409,7 +407,7 @@ const onRatingsUpload = async (event: Event) => {
 		logsUpload: emptyUploadState(),
 		tagsUpload: emptyUploadState(),
 		issues: []
-	}))
+	} satisfies ImportSessionState))
 
 	try {
 		const parsed = await runEffectOrThrow(parseMovielensRatingsCsv(file))
@@ -437,17 +435,16 @@ const onRatingsUpload = async (event: Event) => {
 			ratingsUpload: {
 				status: UploadStatus.loaded,
 				fileName: file.name,
-				rows: parsed.rows.length,
-				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
+				rows: parsed.rows.length
 			},
 			restoreMessage: ""
-		}))
+		} satisfies ImportSessionState))
 	} catch (error) {
 		persistedSessionStore.update(userSessionState, (current) => ({
 			...current,
 			stagedRows: [],
 			draftEdits: {},
-			ratingsUpload: { status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) },
+			ratingsUpload: { status: UploadStatus.error, fileName: file.name, errMessage: parseErrorToMessage(error) },
 			issues: [
 				{
 					id: `ratings-fatal-${Date.now()}`,
@@ -456,7 +453,7 @@ const onRatingsUpload = async (event: Event) => {
 					message: parseErrorToMessage(error)
 				}
 			]
-		}))
+		} satisfies ImportSessionState))
 	}
 
 	input.value = ""
@@ -473,7 +470,7 @@ const onLogsUpload = async (event: Event) => {
 		...session,
 		logsUpload: { status: UploadStatus.parsing, fileName: file.name },
 		issues: session.issues.filter((issue) => issue.source !== IssueSource.logs)
-	}))
+	} satisfies ImportSessionState))
 
 	try {
 		const parsed = await runEffectOrThrow(parseMovielensLogsCsv(file))
@@ -509,14 +506,13 @@ const onLogsUpload = async (event: Event) => {
 			logsUpload: {
 				status: UploadStatus.loaded,
 				fileName: file.name,
-				rows: parsed.rows.length,
-				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
+				rows: parsed.rows.length
 			}
-		}))
+		} satisfies ImportSessionState))
 	} catch (error) {
 		persistedSessionStore.update(userSessionState, (session) => ({
 			...session,
-			logsUpload: { status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) },
+			logsUpload: { status: UploadStatus.error, fileName: file.name, errMessage: parseErrorToMessage(error) },
 			issues: [
 				...session.issues,
 				{
@@ -526,7 +522,7 @@ const onLogsUpload = async (event: Event) => {
 					message: parseErrorToMessage(error)
 				}
 			]
-		}))
+		} satisfies ImportSessionState))
 	}
 
 	input.value = ""
@@ -543,7 +539,7 @@ const onTagsUpload = async (event: Event) => {
 		...session,
 		tagsUpload: { status: UploadStatus.parsing, fileName: file.name },
 		issues: session.issues.filter((issue) => issue.source !== IssueSource.tags)
-	}))
+	} satisfies ImportSessionState))
 
 	try {
 		const parsed = await runEffectOrThrow(parseMovielensTagsCsv(file))
@@ -572,14 +568,13 @@ const onTagsUpload = async (event: Event) => {
 			tagsUpload: {
 				status: UploadStatus.loaded,
 				fileName: file.name,
-				rows: parsed.rows.length,
-				message: formatUploadMetaLoaded(file.name, parsed.rows.length)
+				rows: parsed.rows.length
 			}
-		}))
+		} satisfies ImportSessionState))
 	} catch (error) {
 		persistedSessionStore.update(userSessionState, (session) => ({
 			...session,
-			tagsUpload: { status: UploadStatus.error, fileName: file.name, message: parseErrorToMessage(error) },
+			tagsUpload: { status: UploadStatus.error, fileName: file.name, errMessage: parseErrorToMessage(error) },
 			issues: [
 				...session.issues,
 				{
@@ -589,7 +584,7 @@ const onTagsUpload = async (event: Event) => {
 					message: parseErrorToMessage(error)
 				}
 			]
-		}))
+		} satisfies ImportSessionState))
 	}
 
 	input.value = ""
@@ -627,24 +622,8 @@ const onDownload = async () => {
 					message: parseErrorToMessage(error)
 				}
 			]
-		}))
+		} satisfies ImportSessionState))
 	}
-}
-
-const renderUploadMeta = (state: UploadState) => {
-	const formatUploadMetaError = (fileName: string, message: string) => `${fileName}: ${message}`
-	const formatUploadMetaParsing = (fileName: string) => `Parsing ${fileName}...`
-	const fallbackFileText = "no file"
-	if (state.status === UploadStatus.idle) {
-		return "Not uploaded"
-	}
-	if (state.status === UploadStatus.parsing) {
-		return formatUploadMetaParsing(state.fileName ?? fallbackFileText)
-	}
-	if (state.status === UploadStatus.loaded) {
-		return formatUploadMetaLoaded(state.fileName ?? fallbackFileText, state.rows ?? 0)
-	}
-	return formatUploadMetaError(state.fileName ?? fallbackFileText, state.message ?? "Failed")
 }
 
 const persistSession = (userSession: ImportSessionState) => {
@@ -787,7 +766,6 @@ export const useImportSessionStore = () => {
 		onRemoveRowTag: removeRowTag,
 		onToggleRewatch,
 		onDownload,
-		renderUploadMeta,
 		getIssueCountForRow: (rowId: string) => issueCountByRowId().get(rowId) ?? 0,
 		getInputValue,
 		handleDraftKeyDown,
